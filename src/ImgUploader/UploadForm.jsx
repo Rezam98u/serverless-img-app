@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { API, Auth } from '../aws-exports';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { post } from 'aws-amplify/api';
 
 function UploadForm() {
   const [file, setFile] = useState(null);
@@ -20,15 +21,20 @@ function UploadForm() {
     setMessage('');
 
     try {
-      // Get current user
-      const user = await Auth.currentAuthenticatedUser();
+      // ✅ Updated for Amplify v6
+      const user = await getCurrentUser();
       const userId = user.username;
 
       // Step 1: Get pre-signed URL
-      const presignResponse = await API.post('ImageAPI', '/presign-url', {
-        body: { filename: file.name, userId },
-      });
-      const { uploadUrl } = presignResponse;
+      const presignResponse = await post({
+        apiName: 'ImageAPI',
+        path: '/presign-url',
+        options: {
+          body: { filename: file.name, userId }
+        }
+      }).response;
+
+      const { uploadUrl } = await presignResponse.body.json();
 
       // Step 2: Upload to S3
       await fetch(uploadUrl, {
@@ -38,10 +44,19 @@ function UploadForm() {
       });
 
       // Step 3: Save metadata
-      const imageUrl = uploadUrl.split('?')[0]; // Remove query params for public URL
-      await API.post('ImageAPI', '/save-metadata', {
-        body: { imageUrl, tags: tags.split(',').map(t => t.trim()), userId, timestamp: new Date().toISOString() },
-      });
+      const imageUrl = uploadUrl.split('?')[0];
+      await post({
+        apiName: 'ImageAPI',
+        path: '/save-metadata',
+        options: {
+          body: { 
+            imageUrl, 
+            tags: tags.split(',').map(t => t.trim()), 
+            userId, 
+            timestamp: new Date().toISOString() 
+          }
+        }
+      }).response;
 
       setMessage('Image uploaded successfully!');
     } catch (error) {

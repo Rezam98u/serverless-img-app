@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API } from '../aws-exports';
+import { get } from 'aws-amplify/api';
 
 function ImageGallery() {
   const [images, setImages] = useState([]);
@@ -10,8 +10,13 @@ function ImageGallery() {
 
   const fetchImages = async () => {
     try {
-      const response = await API.get('ImageAPI', '/search-images', {});
-      setImages(response.images || []);
+      const response = await get({
+        apiName: 'ImageAPI',
+        path: '/search-images'
+      }).response;
+
+      const data = await response.body.json();
+      setImages(data.images || []);
     } catch (error) {
       console.error('Error fetching images:', error);
     }
