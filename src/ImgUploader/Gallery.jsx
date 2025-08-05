@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { get } from 'aws-amplify/api';
+import { get, post } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
 import './Gallery.css';
 
 function ImageGallery({ searchTerm = null }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [deletingImageId, setDeletingImageId] = useState(null);
 
   const fetchImages = useCallback(async () => {
     setLoading(true);
@@ -58,6 +60,56 @@ function ImageGallery({ searchTerm = null }) {
     }
   }, [searchTerm]);
 
+  const handleDeleteImage = async (imageId) => {
+    if (!imageId) {
+      console.error('No imageId provided for deletion');
+      return;
+    }
+
+    // Confirm deletion
+    const confirmed = window.confirm('Are you sure you want to delete this image? This action cannot be undone.');
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingImageId(imageId);
+
+    try {
+      // Get current user
+      const user = await getCurrentUser();
+      const userId = user.username;
+
+      console.log('Deleting image:', { imageId, userId });
+
+      const response = await post({
+        apiName: 'ImageAPI',
+        path: '/delete-image',
+        options: {
+          body: { imageId, userId }
+        }
+      }).response;
+
+      const result = await response.body.json();
+      console.log('Delete response:', result);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // Remove the image from the local state
+      setImages(prevImages => prevImages.filter(img => img.imageId !== imageId));
+      
+      // Show success message
+      alert('Image deleted successfully!');
+
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      alert(`Failed to delete image: ${error.message}`);
+    } finally {
+      setDeletingImageId(null);
+    }
+  };
+
   useEffect(() => {
     fetchImages();
   }, [fetchImages]);
@@ -108,6 +160,15 @@ function ImageGallery({ searchTerm = null }) {
                     console.log('Image loaded successfully:', img.url);
                   }}
                 />
+                {/* Delete button overlay */}
+                <button
+                  className="delete-button"
+                  onClick={() => handleDeleteImage(img.imageId)}
+                  disabled={deletingImageId === img.imageId}
+                  title="Delete image"
+                >
+                  {deletingImageId === img.imageId ? 'Deleting...' : '×'}
+                </button>
               </div>
               <div className="image-info">
                 {img.tags && img.tags.length > 0 && (

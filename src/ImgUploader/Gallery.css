@@ -65,6 +65,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
 }
 
 .image-card:hover {
@@ -88,6 +89,49 @@
 
 .image-card:hover .gallery-image {
   transform: scale(1.05);
+}
+
+/* Delete button styles */
+.delete-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(244, 67, 54, 0.9);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.image-card:hover .delete-button {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.delete-button:hover {
+  background-color: rgba(244, 67, 54, 1);
+  transform: scale(1.1);
+}
+
+.delete-button:disabled {
+  background-color: rgba(158, 158, 158, 0.7);
+  cursor: not-allowed;
+  transform: scale(1);
+}
+
+.delete-button:disabled:hover {
+  background-color: rgba(158, 158, 158, 0.7);
+  transform: scale(1);
 }
 
 .image-info {
@@ -124,5 +168,10 @@
   
   .gallery-container {
     padding: 15px;
+  }
+  
+  .delete-button {
+    opacity: 1;
+    transform: scale(1);
   }
 }
