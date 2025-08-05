@@ -6,10 +6,20 @@ function ImageGallery({ searchTerm = null }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lastSearchTerm, setLastSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchImages();
+    // Only fetch if searchTerm changed or on initial load
+    if (searchTerm !== lastSearchTerm) {
+      setLastSearchTerm(searchTerm);
+      fetchImages();
+    }
   }, [searchTerm]);
+
+  // Initial load
+  useEffect(() => {
+    fetchImages();
+  }, []);
 
   const fetchImages = async () => {
     setLoading(true);
@@ -28,6 +38,9 @@ function ImageGallery({ searchTerm = null }) {
       }
         
       console.log('Making API request with options:', options);
+      console.log('Search term:', searchTerm);
+      console.log('Search term type:', typeof searchTerm);
+      console.log('Search term length:', searchTerm ? searchTerm.length : 0);
         
       const response = await get({
         apiName: 'ImageAPI',
