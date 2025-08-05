@@ -65,6 +65,26 @@ function ImageGallery({ searchTerm = null }) {
   return (
     <div className="gallery-container">
       <h2>{searchTerm ? `Search Results for: "${searchTerm}"` : 'Image Gallery'}</h2>
+      
+      {/* Debug button for testing */}
+      <button 
+        onClick={() => {
+          console.log('Testing Lambda function...');
+          fetchImages();
+        }}
+        style={{
+          marginBottom: '20px',
+          padding: '8px 16px',
+          backgroundColor: '#ff9800',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
+        Test Lambda Function
+      </button>
+      
       {images.length === 0 ? (
         <div className="no-images">
           {searchTerm ? 'No images found for this search term.' : 'No images available.'}
