@@ -8,8 +8,17 @@ function ImageGallery({ searchTerm = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [deletingImageId, setDeletingImageId] = useState(null);
+  const [debugInfo, setDebugInfo] = useState('');
+
+  const addDebugInfo = (message) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const newDebugInfo = `[${timestamp}] ${message}\n`;
+    setDebugInfo(prev => prev + newDebugInfo);
+    console.log(`[DEBUG] ${message}`);
+  };
 
   const fetchImages = useCallback(async () => {
+    addDebugInfo('Starting fetchImages...');
     setLoading(true);
     setError(null);
     
@@ -24,7 +33,7 @@ function ImageGallery({ searchTerm = null }) {
         };
       }
         
-      console.log('Making API request with options:', options);
+      addDebugInfo(`Making API request with options: ${JSON.stringify(options)}`);
         
       const response = await get({
         apiName: 'ImageAPI',
@@ -33,7 +42,7 @@ function ImageGallery({ searchTerm = null }) {
       }).response;
 
       const data = await response.body.json();
-      console.log('Raw response data:', data);
+      addDebugInfo(`Raw response data received: ${JSON.stringify(data).substring(0, 200)}...`);
       
       // Simple parsing - the data.body contains the actual response
       let images = [];
@@ -41,76 +50,101 @@ function ImageGallery({ searchTerm = null }) {
         try {
           const parsedBody = JSON.parse(data.body);
           images = parsedBody.images || [];
-          console.log('Successfully parsed images:', images.length);
+          addDebugInfo(`Successfully parsed ${images.length} images from response`);
         } catch (parseError) {
-          console.error('Parse error:', parseError);
+          addDebugInfo(`Parse error: ${parseError.message}`);
           setError('Error parsing response');
           return;
         }
       }
       
-      console.log('Setting images:', images);
+      addDebugInfo(`Setting ${images.length} images to state`);
       setImages(images);
       
     } catch (error) {
-      console.error('Error fetching images:', error);
+      addDebugInfo(`Error fetching images: ${error.message}`);
       setError('Failed to fetch images. Please try again.');
     } finally {
       setLoading(false);
+      addDebugInfo('fetchImages completed');
     }
   }, [searchTerm]);
 
   const handleDeleteImage = async (imageId) => {
+    addDebugInfo(`=== DELETE OPERATION STARTED ===`);
+    addDebugInfo(`Image ID to delete: ${imageId}`);
+    
     if (!imageId) {
-      console.error('No imageId provided for deletion');
+      addDebugInfo('ERROR: No imageId provided for deletion');
       return;
     }
 
     // Confirm deletion
+    addDebugInfo('Showing confirmation dialog...');
     const confirmed = window.confirm('Are you sure you want to delete this image? This action cannot be undone.');
     if (!confirmed) {
+      addDebugInfo('User cancelled deletion');
       return;
     }
 
+    addDebugInfo('User confirmed deletion, setting deleting state...');
     setDeletingImageId(imageId);
 
     try {
       // Get current user
+      addDebugInfo('Getting current user...');
       const user = await getCurrentUser();
       const userId = user.username;
+      addDebugInfo(`Current user ID: ${userId}`);
 
-      console.log('Deleting image:', { imageId, userId });
+      addDebugInfo(`Preparing delete request for image: ${imageId}, user: ${userId}`);
 
-      const response = await post({
+      const deleteRequest = {
         apiName: 'ImageAPI',
         path: '/delete-image',
         options: {
           body: { imageId, userId }
         }
-      }).response;
+      };
+      
+      addDebugInfo(`Delete request config: ${JSON.stringify(deleteRequest)}`);
 
+      addDebugInfo('Sending delete request to API...');
+      const response = await post(deleteRequest).response;
+
+      addDebugInfo('Delete response received, parsing...');
       const result = await response.body.json();
-      console.log('Delete response:', result);
+      addDebugInfo(`Delete response: ${JSON.stringify(result)}`);
 
       if (result.error) {
+        addDebugInfo(`Delete failed with error: ${result.error}`);
         throw new Error(result.error);
       }
 
+      addDebugInfo('Delete successful, updating local state...');
       // Remove the image from the local state
-      setImages(prevImages => prevImages.filter(img => img.imageId !== imageId));
+      setImages(prevImages => {
+        const newImages = prevImages.filter(img => img.imageId !== imageId);
+        addDebugInfo(`Removed image from state. Previous count: ${prevImages.length}, New count: ${newImages.length}`);
+        return newImages;
+      });
       
-      // Show success message
+      addDebugInfo('Showing success message...');
       alert('Image deleted successfully!');
 
     } catch (error) {
-      console.error('Error deleting image:', error);
+      addDebugInfo(`ERROR in delete operation: ${error.message}`);
+      addDebugInfo(`Error stack: ${error.stack}`);
       alert(`Failed to delete image: ${error.message}`);
     } finally {
+      addDebugInfo('Clearing deleting state...');
       setDeletingImageId(null);
+      addDebugInfo('=== DELETE OPERATION COMPLETED ===');
     }
   };
 
   useEffect(() => {
+    addDebugInfo('Gallery component mounted, fetching images...');
     fetchImages();
   }, [fetchImages]);
 
@@ -118,6 +152,10 @@ function ImageGallery({ searchTerm = null }) {
     return (
       <div className="gallery-container">
         <div className="loading">Loading images...</div>
+        <div className="debug-panel">
+          <h3>Debug Info:</h3>
+          <pre>{debugInfo}</pre>
+        </div>
       </div>
     );
   }
@@ -127,6 +165,10 @@ function ImageGallery({ searchTerm = null }) {
       <div className="gallery-container">
         <div className="error">{error}</div>
         <button onClick={fetchImages} className="retry-button">Retry</button>
+        <div className="debug-panel">
+          <h3>Debug Info:</h3>
+          <pre>{debugInfo}</pre>
+        </div>
       </div>
     );
   }
@@ -137,6 +179,37 @@ function ImageGallery({ searchTerm = null }) {
       
       <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
         <strong>Debug Info:</strong> Found {images.length} images
+      </div>
+      
+      {/* Debug Panel */}
+      <div className="debug-panel">
+        <h3>Debug Log:</h3>
+        <button 
+          onClick={() => setDebugInfo('')} 
+          style={{ 
+            marginBottom: '10px', 
+            padding: '5px 10px', 
+            backgroundColor: '#ff9800', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px', 
+            cursor: 'pointer' 
+          }}
+        >
+          Clear Debug Log
+        </button>
+        <pre style={{ 
+          maxHeight: '200px', 
+          overflow: 'auto', 
+          backgroundColor: '#f5f5f5', 
+          padding: '10px', 
+          border: '1px solid #ddd', 
+          borderRadius: '4px',
+          fontSize: '12px',
+          whiteSpace: 'pre-wrap'
+        }}>
+          {debugInfo || 'No debug info yet...'}
+        </pre>
       </div>
       
       {images.length === 0 ? (
@@ -153,17 +226,20 @@ function ImageGallery({ searchTerm = null }) {
                   alt={img.tags ? img.tags.join(', ') : 'Image'} 
                   className="gallery-image"
                   onError={(e) => {
-                    console.log('Image failed to load:', img.url);
+                    addDebugInfo(`Image failed to load: ${img.url}`);
                     e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
                   }}
                   onLoad={() => {
-                    console.log('Image loaded successfully:', img.url);
+                    addDebugInfo(`Image loaded successfully: ${img.url}`);
                   }}
                 />
                 {/* Delete button overlay */}
                 <button
                   className="delete-button"
-                  onClick={() => handleDeleteImage(img.imageId)}
+                  onClick={() => {
+                    addDebugInfo(`Delete button clicked for image: ${img.imageId}`);
+                    handleDeleteImage(img.imageId);
+                  }}
                   disabled={deletingImageId === img.imageId}
                   title="Delete image"
                 >
@@ -171,6 +247,9 @@ function ImageGallery({ searchTerm = null }) {
                 </button>
               </div>
               <div className="image-info">
+                <div style={{ fontSize: '10px', color: '#666', marginBottom: '5px' }}>
+                  ID: {img.imageId}
+                </div>
                 {img.tags && img.tags.length > 0 && (
                   <div className="tags">
                     {img.tags.map((tag, tagIndex) => (
