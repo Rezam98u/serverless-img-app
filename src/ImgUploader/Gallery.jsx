@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { get } from 'aws-amplify/api';
 import './Gallery.css';
 
@@ -7,11 +7,7 @@ function ImageGallery({ searchTerm = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchImages();
-  }, [searchTerm]);
-
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -60,7 +56,11 @@ function ImageGallery({ searchTerm = null }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm]);
+
+  useEffect(() => {
+    fetchImages();
+  }, [fetchImages]);
 
   if (loading) {
     return (
