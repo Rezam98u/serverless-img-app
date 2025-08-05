@@ -1,39 +1,48 @@
 import React, { useState } from 'react';
-import { get } from 'aws-amplify/api';
-import ImageGallery from './Gallery';
+import './SearchBar.css';
 
-function SearchBar() {
+function SearchBar({ onSearch }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [images, setImages] = useState([]);
 
-  const handleSearch = async () => {
-    try {
-      const response = await get({
-        apiName: 'ImageAPI',
-        path: '/search-images',
-        options: {
-          queryStringParameters: { tag: searchTerm }
-        }
-      }).response;
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (onSearch) {
+      onSearch(searchTerm);
+    }
+  };
 
-      const data = await response.body.json();
-      setImages(data.images || []);
-    } catch (error) {
-      console.error('Search error:', error);
+  const handleClear = () => {
+    setSearchTerm('');
+    if (onSearch) {
+      onSearch('');
     }
   };
 
   return (
-    <div>
-      <h2>Search Images</h2>
-      <input 
-        type="text" 
-        placeholder="Search by tag" 
-        value={searchTerm} 
-        onChange={(e) => setSearchTerm(e.target.value)} 
-      />
-      <button onClick={handleSearch}>Search</button>
-      <ImageGallery images={images} />
+    <div className="search-container">
+      <form onSubmit={handleSearch} className="search-form">
+        <div className="search-input-group">
+          <input 
+            type="text" 
+            placeholder="Search images by tag..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          <button type="submit" className="search-button">
+            Search
+          </button>
+          {searchTerm && (
+            <button 
+              type="button" 
+              onClick={handleClear}
+              className="clear-button"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </form>
     </div>
   );
 }

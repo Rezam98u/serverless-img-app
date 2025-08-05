@@ -1,70 +1,167 @@
-# Getting Started with Create React App
+# Serverless Image Hosting & Sharing App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern React application for uploading, storing, and searching images using AWS serverless services.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+### 🖼️ Image Upload
+- Drag and drop or click to select images
+- Add tags to images for better organization
+- Automatic upload to AWS S3 with metadata storage
+- Real-time upload progress and status feedback
 
-### `npm start`
+### 🔍 Image Search & Gallery
+- Search images by tags
+- Browse all uploaded images in a responsive grid
+- Modern card-based layout with hover effects
+- Responsive design for mobile and desktop
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 🏗️ Architecture
+- **Frontend**: React with AWS Amplify v6
+- **Backend**: AWS Lambda functions
+- **Storage**: Amazon S3 for images, DynamoDB for metadata
+- **API**: Amazon API Gateway
+- **Authentication**: AWS Cognito
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## AWS Services Used
 
-### `npm test`
+### Lambda Functions
+- `SaveImageMetadata`: Stores image metadata in DynamoDB
+- `ProcessS3Upload`: Handles S3 upload processing
+- `SearchImages`: Searches images by tags
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### API Gateway Endpoints
+- `POST /presign-url`: Get pre-signed URL for S3 upload
+- `POST /save-metadata`: Save image metadata
+- `GET /search-images`: Search images by tags
 
-### `npm run build`
+### Storage
+- **S3 Bucket**: `snapvault-images-reza` for image storage
+- **DynamoDB Table**: `ImageMetadata` for metadata storage
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Getting Started
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Prerequisites
+- Node.js (v16 or higher)
+- AWS account with configured services
+- AWS Amplify CLI (optional)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd serverless-image-app
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. Install dependencies:
+```bash
+npm install
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. Configure AWS Amplify:
+   - Ensure `src/aws-exports.js` contains your AWS configuration
+   - Update API endpoints if needed
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. Start the development server:
+```bash
+npm start
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+The application will open in your browser at `http://localhost:3000`.
 
-## Learn More
+## Usage
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Uploading Images
+1. Click "Upload Images" section
+2. Select an image file (JPG, PNG, etc.)
+3. Add tags separated by commas (e.g., "nature, landscape, sunset")
+4. Click "Upload Image"
+5. Wait for upload confirmation
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Searching Images
+1. Use the search bar in the "Search & Browse Images" section
+2. Enter a tag to search for (e.g., "nature")
+3. Click "Search" or press Enter
+4. View filtered results in the gallery below
 
-### Code Splitting
+### Browsing All Images
+- The gallery automatically displays all uploaded images
+- Images are shown in a responsive grid layout
+- Hover over images to see tags and upload dates
+- Click on images to view them in full size
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Component Structure
 
-### Analyzing the Bundle Size
+```
+src/
+├── App.js                 # Main application component
+├── App.css               # Main application styles
+├── aws-exports.js        # AWS configuration
+└── ImgUploader/
+    ├── UploadForm.jsx    # Image upload component
+    ├── UploadForm.css    # Upload form styles
+    ├── SearchBar.jsx     # Search functionality
+    ├── SearchBar.css     # Search bar styles
+    ├── Gallery.jsx       # Image gallery component
+    └── Gallery.css       # Gallery styles
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## API Endpoints
 
-### Making a Progressive Web App
+### Search Images
+```
+GET /search-images?tag={searchTerm}
+```
+Returns filtered images based on the provided tag.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Get Pre-signed URL
+```
+POST /presign-url
+Body: { filename: string, userId: string }
+```
+Returns a pre-signed URL for direct S3 upload.
 
-### Advanced Configuration
+### Save Metadata
+```
+POST /save-metadata
+Body: { imageUrl: string, tags: string[], userId: string, timestamp: string }
+```
+Saves image metadata to DynamoDB.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Styling
 
-### Deployment
+The application uses modern CSS with:
+- Responsive grid layouts
+- Smooth hover animations
+- Gradient backgrounds
+- Card-based design
+- Mobile-first approach
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Error Handling
 
-### `npm run build` fails to minify
+The application includes comprehensive error handling:
+- Network request failures
+- File upload errors
+- Invalid file types
+- Search failures
+- Loading states and retry mechanisms
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
