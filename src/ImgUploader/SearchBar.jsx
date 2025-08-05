@@ -1,22 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import './SearchBar.css';
 
-function SearchBar({ onSearch }) {
+const SearchBar = memo(({ onSearch }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     e.preventDefault();
     if (onSearch) {
       onSearch(searchTerm);
     }
-  };
+  }, [onSearch, searchTerm]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setSearchTerm('');
     if (onSearch) {
       onSearch('');
     }
-  };
+  }, [onSearch]);
+
+  const handleInputChange = useCallback((e) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const handleKeyPress = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch(e);
+    }
+  }, [handleSearch]);
 
   return (
     <div className="search-container">
@@ -26,10 +37,16 @@ function SearchBar({ onSearch }) {
             type="text" 
             placeholder="Search images by tag..." 
             value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
             className="search-input"
+            aria-label="Search images by tag"
           />
-          <button type="submit" className="search-button">
+          <button 
+            type="submit" 
+            className="search-button"
+            aria-label="Search images"
+          >
             Search
           </button>
           {searchTerm && (
@@ -37,6 +54,7 @@ function SearchBar({ onSearch }) {
               type="button" 
               onClick={handleClear}
               className="clear-button"
+              aria-label="Clear search"
             >
               Clear
             </button>
@@ -45,6 +63,8 @@ function SearchBar({ onSearch }) {
       </form>
     </div>
   );
-}
+});
+
+SearchBar.displayName = 'SearchBar';
 
 export default SearchBar;

@@ -1,9 +1,94 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { get, post } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import './Gallery.css';
 
-function ImageGallery({ searchTerm = null }) {
+const ImageCard = memo(({ image, onDelete, isDeleting }) => {
+  const handleImageError = useCallback((e) => {
+    e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
+  }, []);
+
+  const handleDeleteClick = useCallback(() => {
+    onDelete(image.imageId);
+  }, [onDelete, image.imageId]);
+
+  const formatDate = useMemo(() => {
+    return image.uploadDate ? new Date(image.uploadDate).toLocaleDateString() : '';
+  }, [image.uploadDate]);
+
+  return (
+    <div className="image-card">
+      <div className="image-container">
+        <img 
+          src={image.url} 
+          alt={image.tags ? image.tags.join(', ') : 'Image'} 
+          className="gallery-image"
+          onError={handleImageError}
+          loading="lazy"
+        />
+        <button
+          className="delete-button"
+          onClick={handleDeleteClick}
+          disabled={isDeleting}
+          title="Delete image"
+          aria-label="Delete image"
+        >
+          {isDeleting ? 'Deleting...' : '×'}
+        </button>
+      </div>
+      <div className="image-info">
+        <div className="image-id">ID: {image.imageId}</div>
+        {image.tags && image.tags.length > 0 && (
+          <div className="tags">
+            {image.tags.map((tag, index) => (
+              <span key={index} className="tag">{tag}</span>
+            ))}
+          </div>
+        )}
+        {formatDate && (
+          <div className="upload-date">
+            Uploaded: {formatDate}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+ImageCard.displayName = 'ImageCard';
+
+const ConfirmationDialog = memo(({ isOpen, imageId, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="confirmation-overlay">
+      <div className="confirmation-dialog">
+        <h3>Confirm Delete</h3>
+        <p>Are you sure you want to delete this image?</p>
+        <p className="image-id">Image ID: {imageId}</p>
+        <p className="warning">This action cannot be undone.</p>
+        <div className="dialog-buttons">
+          <button 
+            onClick={onConfirm}
+            className="confirm-button"
+          >
+            Yes, Delete
+          </button>
+          <button 
+            onClick={onCancel}
+            className="cancel-button"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ConfirmationDialog.displayName = 'ConfirmationDialog';
+
+const ImageGallery = memo(({ searchTerm = null }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -12,22 +97,13 @@ function ImageGallery({ searchTerm = null }) {
   const [imageToDelete, setImageToDelete] = useState(null);
 
   const fetchImages = useCallback(async () => {
-    console.log('🔄 Starting fetchImages...');
     setLoading(true);
     setError(null);
     
     try {
-      let options = {};
-      
-      if (searchTerm && searchTerm.trim() !== '') {
-        options = {
-          queryStringParameters: { 
-            tag: searchTerm.trim() 
-          }
-        };
-      }
-        
-      console.log('📡 Making API request with options:', options);
+      const options = searchTerm && searchTerm.trim() !== '' 
+        ? { queryStringParameters: { tag: searchTerm.trim() } }
+        : {};
         
       const response = await get({
         apiName: 'ImageAPI',
@@ -36,58 +112,43 @@ function ImageGallery({ searchTerm = null }) {
       }).response;
 
       const data = await response.body.json();
-      console.log('📥 Raw response data:', data);
       
-      // Simple parsing - the data.body contains the actual response
       let images = [];
       if (data.body) {
         try {
           const parsedBody = JSON.parse(data.body);
           images = parsedBody.images || [];
-          console.log('✅ Successfully parsed images:', images.length);
         } catch (parseError) {
-          console.error('❌ Parse error:', parseError);
+          console.error('Parse error:', parseError);
           setError('Error parsing response');
           return;
         }
       }
       
-      console.log('🖼️ Setting images to state:', images);
       setImages(images);
       
     } catch (error) {
-      console.error('❌ Error fetching images:', error);
+      console.error('Error fetching images:', error);
       setError('Failed to fetch images. Please try again.');
     } finally {
       setLoading(false);
-      console.log('✅ fetchImages completed');
     }
   }, [searchTerm]);
 
-  const handleDeleteClick = (imageId) => {
-    console.log('🖱️ Delete button clicked for image:', imageId);
+  const handleDeleteClick = useCallback((imageId) => {
     setImageToDelete(imageId);
     setShowConfirmDialog(true);
-  };
+  }, []);
 
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     if (!imageToDelete) return;
-    
-    console.log('🗑️ === DELETE OPERATION STARTED ===');
-    console.log('🗑️ Image ID to delete:', imageToDelete);
-    console.log('🗑️ Current images in state:', images);
     
     setShowConfirmDialog(false);
     setDeletingImageId(imageToDelete);
 
     try {
-      // Get current user
-      console.log('👤 Getting current user...');
       const user = await getCurrentUser();
       const userId = user.username;
-      console.log('👤 Current user ID:', userId);
-
-      console.log('📤 Preparing delete request for image:', imageToDelete, 'user:', userId);
 
       const deleteRequest = {
         apiName: 'ImageAPI',
@@ -97,81 +158,47 @@ function ImageGallery({ searchTerm = null }) {
         }
       };
       
-      console.log('📤 Delete request config:', deleteRequest);
+      const response = await post(deleteRequest).response;
+      const result = await response.body.json();
 
-      console.log('📡 Sending delete request to API...');
-      
-      // Add more detailed error handling for the API call
-      try {
-        const response = await post(deleteRequest).response;
-        console.log('📥 Delete response received, parsing...');
-        const result = await response.body.json();
-        console.log('📥 Delete response:', result);
-
-        if (result.error) {
-          console.error('❌ Delete failed with error:', result.error);
-          throw new Error(result.error);
-        }
-
-        console.log('✅ Delete successful, updating local state...');
-        console.log('🔄 Current images before removal:', images);
-        
-        // Remove the image from the local state
-        setImages(prevImages => {
-          console.log('🔄 setImages callback - prevImages:', prevImages);
-          const newImages = prevImages.filter(img => {
-            console.log('🔄 Checking image:', img.imageId, 'against:', imageToDelete, 'Match:', img.imageId === imageToDelete);
-            return img.imageId !== imageToDelete;
-          });
-          console.log('🔄 Removed image from state. Previous count:', prevImages.length, 'New count:', newImages.length);
-          console.log('🔄 New images array:', newImages);
-          return newImages;
-        });
-        
-        console.log('✅ Showing success message...');
-        alert('Image deleted successfully!');
-
-      } catch (apiError) {
-        console.error('❌ API call failed:', apiError);
-        console.error('❌ API error type:', apiError.name);
-        console.error('❌ API error stack:', apiError.stack);
-        
-        // Check if it's a 404 (endpoint not found)
-        if (apiError.message && apiError.message.includes('404')) {
-          console.error('❌ Delete endpoint not found. You need to create the /delete-image API endpoint.');
-          alert('Delete endpoint not found. Please create the API endpoint first.');
-        } else {
-          throw apiError; // Re-throw to be caught by outer catch
-        }
+      if (result.error) {
+        throw new Error(result.error);
       }
 
+      setImages(prevImages => 
+        prevImages.filter(img => img.imageId !== imageToDelete)
+      );
+      
+      alert('Image deleted successfully!');
+
     } catch (error) {
-      console.error('❌ ERROR in delete operation:', error);
-      console.error('❌ Error stack:', error.stack);
+      console.error('Error deleting image:', error);
       alert(`Failed to delete image: ${error.message}`);
     } finally {
-      console.log('🔄 Clearing deleting state...');
       setDeletingImageId(null);
       setImageToDelete(null);
-      console.log('✅ === DELETE OPERATION COMPLETED ===');
     }
-  };
+  }, [imageToDelete]);
 
-  const cancelDelete = () => {
-    console.log('❌ User cancelled deletion');
+  const cancelDelete = useCallback(() => {
     setShowConfirmDialog(false);
     setImageToDelete(null);
-  };
+  }, []);
 
   useEffect(() => {
-    console.log('🚀 Gallery component mounted, fetching images...');
     fetchImages();
   }, [fetchImages]);
 
-  // Monitor images state changes
-  useEffect(() => {
-    console.log('🖼️ Images state changed:', images.length, 'images');
-    console.log('🖼️ Images IDs:', images.map(img => img.imageId));
+  const filteredImages = useMemo(() => {
+    return images.filter(img => 
+      img.url && 
+      img.url.trim() !== '' && 
+      img.imageId && 
+      img.imageId !== 'timestamp' && 
+      img.imageId !== 'tags' && 
+      img.imageId !== 'url' && 
+      img.imageId !== 'userId'
+    );
   }, [images]);
 
   if (loading) {
@@ -195,122 +222,37 @@ function ImageGallery({ searchTerm = null }) {
     <div className="gallery-container">
       <h2>{searchTerm ? `Search Results for: "${searchTerm}"` : 'Image Gallery'}</h2>
       
-      <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
-        <strong>Debug Info:</strong> Found {images.length} images
+      <div className="gallery-stats">
+        <strong>Found {filteredImages.length} images</strong>
       </div>
       
-      {/* Custom Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            maxWidth: '400px',
-            textAlign: 'center'
-          }}>
-            <h3>Confirm Delete</h3>
-            <p>Are you sure you want to delete this image?</p>
-            <p style={{ fontSize: '12px', color: '#666' }}>Image ID: {imageToDelete}</p>
-            <p style={{ fontSize: '12px', color: '#666' }}>This action cannot be undone.</p>
-            <div style={{ marginTop: '20px' }}>
-              <button 
-                onClick={confirmDelete}
-                style={{
-                  marginRight: '10px',
-                  padding: '10px 20px',
-                  backgroundColor: '#f44336',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Yes, Delete
-              </button>
-              <button 
-                onClick={cancelDelete}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#666',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationDialog
+        isOpen={showConfirmDialog}
+        imageId={imageToDelete}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
       
-      {images.length === 0 ? (
+      {filteredImages.length === 0 ? (
         <div className="no-images">
           {searchTerm ? 'No images found for this search term.' : 'No images available.'}
         </div>
       ) : (
         <div className="image-grid">
-          {images.map((img, index) => (
-            <div key={img.imageId || index} className="image-card">
-              <div className="image-container">
-                <img 
-                  src={img.url} 
-                  alt={img.tags ? img.tags.join(', ') : 'Image'} 
-                  className="gallery-image"
-                  onError={(e) => {
-                    console.log('❌ Image failed to load:', img.url);
-                    e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
-                  }}
-                  onLoad={() => {
-                    console.log('✅ Image loaded successfully:', img.url);
-                  }}
-                />
-                {/* Delete button overlay */}
-                <button
-                  className="delete-button"
-                  onClick={() => handleDeleteClick(img.imageId)}
-                  disabled={deletingImageId === img.imageId}
-                  title="Delete image"
-                >
-                  {deletingImageId === img.imageId ? 'Deleting...' : '×'}
-                </button>
-              </div>
-              <div className="image-info">
-                <div style={{ fontSize: '10px', color: '#666', marginBottom: '5px' }}>
-                  ID: {img.imageId}
-                </div>
-                {img.tags && img.tags.length > 0 && (
-                  <div className="tags">
-                    {img.tags.map((tag, tagIndex) => (
-                      <span key={tagIndex} className="tag">{tag}</span>
-                    ))}
-                  </div>
-                )}
-                {img.uploadDate && (
-                  <div className="upload-date">
-                    Uploaded: {new Date(img.uploadDate).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-            </div>
+          {filteredImages.map((image) => (
+            <ImageCard
+              key={image.imageId}
+              image={image}
+              onDelete={handleDeleteClick}
+              isDeleting={deletingImageId === image.imageId}
+            />
           ))}
         </div>
       )}
     </div>
   );
-}
+});
+
+ImageGallery.displayName = 'ImageGallery';
 
 export default ImageGallery;
