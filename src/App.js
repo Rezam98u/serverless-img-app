@@ -1,4 +1,4 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useRef } from 'react';
 import { withAuthenticator } from '@aws-amplify/ui-react';
 import UploadForm from "./ImgUploader/UploadForm";
 import SearchBar from './ImgUploader/SearchBar';
@@ -12,10 +12,18 @@ const MemoizedImageGallery = memo(ImageGallery);
 
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
+  const galleryRef = useRef();
 
   // Memoized callback to prevent unnecessary re-renders
   const handleSearch = useCallback((term) => {
     setSearchTerm(term);
+  }, []);
+
+  // Callback to refresh gallery after upload
+  const handleUploadSuccess = useCallback(() => {
+    if (galleryRef.current && galleryRef.current.fetchAllImages) {
+      galleryRef.current.fetchAllImages();
+    }
   }, []);
 
   return (
@@ -27,7 +35,7 @@ function App() {
       <main className="app-main">
         <section className="upload-section">
           <h2>Upload Images</h2>
-          <MemoizedUploadForm />
+          <MemoizedUploadForm onUploadSuccess={handleUploadSuccess} />
         </section>
         
         <section className="search-section">
@@ -36,7 +44,7 @@ function App() {
         </section>
         
         <section className="gallery-section">
-          <MemoizedImageGallery searchTerm={searchTerm} />
+          <MemoizedImageGallery ref={galleryRef} searchTerm={searchTerm} />
         </section>
       </main>
     </div>

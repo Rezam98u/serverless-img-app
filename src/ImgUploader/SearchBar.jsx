@@ -2,24 +2,25 @@ import React, { useState, useCallback, memo } from 'react';
 import './SearchBar.css';
 
 const SearchBar = memo(({ onSearch }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [inputValue, setInputValue] = useState('');
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
+    const searchTerm = inputValue.trim();
     if (onSearch) {
       onSearch(searchTerm);
     }
-  }, [onSearch, searchTerm]);
+  }, [onSearch, inputValue]);
 
   const handleClear = useCallback(() => {
-    setSearchTerm('');
+    setInputValue('');
     if (onSearch) {
       onSearch('');
     }
   }, [onSearch]);
 
   const handleInputChange = useCallback((e) => {
-    setSearchTerm(e.target.value);
+    setInputValue(e.target.value);
   }, []);
 
   const handleKeyPress = useCallback((e) => {
@@ -35,32 +36,37 @@ const SearchBar = memo(({ onSearch }) => {
         <div className="search-input-group">
           <input 
             type="text" 
-            placeholder="Search images by tag..." 
-            value={searchTerm} 
+            placeholder="Filter images by tag..." 
+            value={inputValue} 
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             className="search-input"
-            aria-label="Search images by tag"
+            aria-label="Filter images by tag"
           />
           <button 
             type="submit" 
             className="search-button"
-            aria-label="Search images"
+            aria-label="Filter images"
           >
-            Search
+            Filter
           </button>
-          {searchTerm && (
+          {inputValue && (
             <button 
               type="button" 
               onClick={handleClear}
               className="clear-button"
-              aria-label="Clear search"
+              aria-label="Clear filter"
             >
               Clear
             </button>
           )}
         </div>
       </form>
+      {inputValue && (
+        <div className="current-search">
+          <span>Filtering by: <strong>"{inputValue}"</strong></span>
+        </div>
+      )}
     </div>
   );
 });
