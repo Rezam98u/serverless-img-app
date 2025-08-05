@@ -3,7 +3,7 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { post } from 'aws-amplify/api';
 import './UploadForm.css';
 
-const UploadForm = memo(() => {
+const UploadForm = memo(({ onUploadSuccess }) => {
   const [file, setFile] = useState(null);
   const [tags, setTags] = useState('');
   const [message, setMessage] = useState('');
@@ -95,13 +95,18 @@ const UploadForm = memo(() => {
 
       setMessage('Image uploaded successfully!');
       resetForm();
+      
+      // Notify parent component to refresh gallery
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
     } catch (error) {
       console.error('Upload error:', error);
       setMessage(`Error uploading image: ${error.message}`);
     } finally {
       setLoading(false);
     }
-  }, [file, tags, resetForm]);
+  }, [file, tags, resetForm, onUploadSuccess]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !loading && file) {

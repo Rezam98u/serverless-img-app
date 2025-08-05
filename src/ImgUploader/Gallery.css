@@ -60,26 +60,7 @@
   border-radius: 8px;
 }
 
-.no-search {
-  text-align: center;
-  padding: 60px 40px;
-  color: #666;
-  font-size: 1.1rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 12px;
-  border: 2px dashed #ccc;
-}
 
-.no-search p {
-  margin: 10px 0;
-  font-size: 1.2rem;
-}
-
-.no-search p:first-child {
-  font-size: 1.4rem;
-  color: #1976d2;
-  font-weight: 500;
-}
 
 .image-grid {
   display: grid;

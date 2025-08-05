@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, forwardRef, useImperativeHandle } from 'react';
 import { get, post } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import './Gallery.css';
@@ -88,29 +88,23 @@ const ConfirmationDialog = memo(({ isOpen, imageId, onConfirm, onCancel }) => {
 
 ConfirmationDialog.displayName = 'ConfirmationDialog';
 
-const ImageGallery = memo(({ searchTerm = null }) => {
-  const [images, setImages] = useState([]);
+const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
+  const [allImages, setAllImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [deletingImageId, setDeletingImageId] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [imageToDelete, setImageToDelete] = useState(null);
-  const [hasSearched, setHasSearched] = useState(false);
 
-  const fetchImages = useCallback(async (term) => {
+  const fetchAllImages = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setHasSearched(true);
     
     try {
-      const options = term && term.trim() !== '' 
-        ? { queryStringParameters: { tag: term.trim() } }
-        : {};
-        
       const response = await get({
         apiName: 'ImageAPI',
         path: '/search-images',
-        options
+        options: {}
       }).response;
 
       const data = await response.body.json();
@@ -127,7 +121,7 @@ const ImageGallery = memo(({ searchTerm = null }) => {
         }
       }
       
-      setImages(images);
+      setAllImages(images);
       
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -136,6 +130,11 @@ const ImageGallery = memo(({ searchTerm = null }) => {
       setLoading(false);
     }
   }, []);
+
+  // Expose fetchAllImages method to parent component
+  useImperativeHandle(ref, () => ({
+    fetchAllImages
+  }), [fetchAllImages]);
 
   const handleDeleteClick = useCallback((imageId) => {
     setImageToDelete(imageId);
@@ -167,7 +166,7 @@ const ImageGallery = memo(({ searchTerm = null }) => {
         throw new Error(result.error);
       }
 
-      setImages(prevImages => 
+      setAllImages(prevImages => 
         prevImages.filter(img => img.imageId !== imageToDelete)
       );
       
@@ -187,15 +186,14 @@ const ImageGallery = memo(({ searchTerm = null }) => {
     setImageToDelete(null);
   }, []);
 
-  // Only fetch images when searchTerm changes and is not null/empty
+  // Load all images on component mount
   useEffect(() => {
-    if (searchTerm !== null) {
-      fetchImages(searchTerm);
-    }
-  }, [searchTerm, fetchImages]);
+    fetchAllImages();
+  }, [fetchAllImages]);
 
+  // Filter images based on search term
   const filteredImages = useMemo(() => {
-    return images.filter(img => 
+    let images = allImages.filter(img => 
       img.url && 
       img.url.trim() !== '' && 
       img.imageId && 
@@ -204,12 +202,25 @@ const ImageGallery = memo(({ searchTerm = null }) => {
       img.imageId !== 'url' && 
       img.imageId !== 'userId'
     );
-  }, [images]);
+
+    // If there's a search term, filter by tag
+    if (searchTerm && searchTerm.trim() !== '') {
+      const searchLower = searchTerm.trim().toLowerCase();
+      images = images.filter(img => 
+        img.tags && 
+        img.tags.some(tag => 
+          tag.toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    return images;
+  }, [allImages, searchTerm]);
 
   if (loading) {
     return (
       <div className="gallery-container">
-        <div className="loading">Searching images...</div>
+        <div className="loading">Loading images...</div>
       </div>
     );
   }
@@ -218,20 +229,7 @@ const ImageGallery = memo(({ searchTerm = null }) => {
     return (
       <div className="gallery-container">
         <div className="error">{error}</div>
-        <button onClick={() => fetchImages(searchTerm)} className="retry-button">Retry</button>
-      </div>
-    );
-  }
-
-  // Show initial state when no search has been performed
-  if (!hasSearched) {
-    return (
-      <div className="gallery-container">
-        <h2>Image Gallery</h2>
-        <div className="no-search">
-          <p>🔍 Use the search bar above to find images by tag</p>
-          <p>Enter a tag and click "Search" to see matching images</p>
-        </div>
+        <button onClick={fetchAllImages} className="retry-button">Retry</button>
       </div>
     );
   }
@@ -241,12 +239,17 @@ const ImageGallery = memo(({ searchTerm = null }) => {
       <h2>
         {searchTerm && searchTerm.trim() !== '' 
           ? `Search Results for: "${searchTerm}"` 
-          : 'All Images'
+          : 'Your Image Gallery'
         }
       </h2>
       
       <div className="gallery-stats">
-        <strong>Found {filteredImages.length} images</strong>
+        <strong>
+          {searchTerm && searchTerm.trim() !== '' 
+            ? `Found ${filteredImages.length} images with tag "${searchTerm}"`
+            : `Showing ${filteredImages.length} images`
+          }
+        </strong>
       </div>
       
       <ConfirmationDialog
@@ -259,8 +262,8 @@ const ImageGallery = memo(({ searchTerm = null }) => {
       {filteredImages.length === 0 ? (
         <div className="no-images">
           {searchTerm && searchTerm.trim() !== '' 
-            ? `No images found for tag: "${searchTerm}"` 
-            : 'No images available.'
+            ? `No images found with tag: "${searchTerm}"` 
+            : 'No images uploaded yet. Upload your first image above!'
           }
         </div>
       ) : (
@@ -277,7 +280,7 @@ const ImageGallery = memo(({ searchTerm = null }) => {
       )}
     </div>
   );
-});
+}));
 
 ImageGallery.displayName = 'ImageGallery';
 

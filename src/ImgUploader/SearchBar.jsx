@@ -3,12 +3,10 @@ import './SearchBar.css';
 
 const SearchBar = memo(({ onSearch }) => {
   const [inputValue, setInputValue] = useState('');
-  const [currentSearch, setCurrentSearch] = useState('');
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
     const searchTerm = inputValue.trim();
-    setCurrentSearch(searchTerm);
     if (onSearch) {
       onSearch(searchTerm);
     }
@@ -16,7 +14,6 @@ const SearchBar = memo(({ onSearch }) => {
 
   const handleClear = useCallback(() => {
     setInputValue('');
-    setCurrentSearch('');
     if (onSearch) {
       onSearch('');
     }
@@ -39,35 +36,35 @@ const SearchBar = memo(({ onSearch }) => {
         <div className="search-input-group">
           <input 
             type="text" 
-            placeholder="Search images by tag..." 
+            placeholder="Filter images by tag..." 
             value={inputValue} 
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             className="search-input"
-            aria-label="Search images by tag"
+            aria-label="Filter images by tag"
           />
           <button 
             type="submit" 
             className="search-button"
-            aria-label="Search images"
+            aria-label="Filter images"
           >
-            Search
+            Filter
           </button>
-          {(inputValue || currentSearch) && (
+          {inputValue && (
             <button 
               type="button" 
               onClick={handleClear}
               className="clear-button"
-              aria-label="Clear search"
+              aria-label="Clear filter"
             >
               Clear
             </button>
           )}
         </div>
       </form>
-      {currentSearch && (
+      {inputValue && (
         <div className="current-search">
-          <span>Current search: <strong>"{currentSearch}"</strong></span>
+          <span>Filtering by: <strong>"{inputValue}"</strong></span>
         </div>
       )}
     </div>
