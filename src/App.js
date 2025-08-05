@@ -11,7 +11,7 @@ const MemoizedSearchBar = memo(SearchBar);
 const MemoizedImageGallery = memo(ImageGallery);
 
 function App() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(null);
 
   // Memoized callback to prevent unnecessary re-renders
   const handleSearch = useCallback((term) => {

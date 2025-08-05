@@ -95,14 +95,16 @@ const ImageGallery = memo(({ searchTerm = null }) => {
   const [deletingImageId, setDeletingImageId] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [imageToDelete, setImageToDelete] = useState(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const fetchImages = useCallback(async () => {
+  const fetchImages = useCallback(async (term) => {
     setLoading(true);
     setError(null);
+    setHasSearched(true);
     
     try {
-      const options = searchTerm && searchTerm.trim() !== '' 
-        ? { queryStringParameters: { tag: searchTerm.trim() } }
+      const options = term && term.trim() !== '' 
+        ? { queryStringParameters: { tag: term.trim() } }
         : {};
         
       const response = await get({
@@ -133,7 +135,7 @@ const ImageGallery = memo(({ searchTerm = null }) => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm]);
+  }, []);
 
   const handleDeleteClick = useCallback((imageId) => {
     setImageToDelete(imageId);
@@ -185,9 +187,12 @@ const ImageGallery = memo(({ searchTerm = null }) => {
     setImageToDelete(null);
   }, []);
 
+  // Only fetch images when searchTerm changes and is not null/empty
   useEffect(() => {
-    fetchImages();
-  }, [fetchImages]);
+    if (searchTerm !== null) {
+      fetchImages(searchTerm);
+    }
+  }, [searchTerm, fetchImages]);
 
   const filteredImages = useMemo(() => {
     return images.filter(img => 
@@ -204,7 +209,7 @@ const ImageGallery = memo(({ searchTerm = null }) => {
   if (loading) {
     return (
       <div className="gallery-container">
-        <div className="loading">Loading images...</div>
+        <div className="loading">Searching images...</div>
       </div>
     );
   }
@@ -213,14 +218,32 @@ const ImageGallery = memo(({ searchTerm = null }) => {
     return (
       <div className="gallery-container">
         <div className="error">{error}</div>
-        <button onClick={fetchImages} className="retry-button">Retry</button>
+        <button onClick={() => fetchImages(searchTerm)} className="retry-button">Retry</button>
+      </div>
+    );
+  }
+
+  // Show initial state when no search has been performed
+  if (!hasSearched) {
+    return (
+      <div className="gallery-container">
+        <h2>Image Gallery</h2>
+        <div className="no-search">
+          <p>🔍 Use the search bar above to find images by tag</p>
+          <p>Enter a tag and click "Search" to see matching images</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="gallery-container">
-      <h2>{searchTerm ? `Search Results for: "${searchTerm}"` : 'Image Gallery'}</h2>
+      <h2>
+        {searchTerm && searchTerm.trim() !== '' 
+          ? `Search Results for: "${searchTerm}"` 
+          : 'All Images'
+        }
+      </h2>
       
       <div className="gallery-stats">
         <strong>Found {filteredImages.length} images</strong>
@@ -235,7 +258,10 @@ const ImageGallery = memo(({ searchTerm = null }) => {
       
       {filteredImages.length === 0 ? (
         <div className="no-images">
-          {searchTerm ? 'No images found for this search term.' : 'No images available.'}
+          {searchTerm && searchTerm.trim() !== '' 
+            ? `No images found for tag: "${searchTerm}"` 
+            : 'No images available.'
+          }
         </div>
       ) : (
         <div className="image-grid">

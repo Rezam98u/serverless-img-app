@@ -2,24 +2,28 @@ import React, { useState, useCallback, memo } from 'react';
 import './SearchBar.css';
 
 const SearchBar = memo(({ onSearch }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [currentSearch, setCurrentSearch] = useState('');
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
+    const searchTerm = inputValue.trim();
+    setCurrentSearch(searchTerm);
     if (onSearch) {
       onSearch(searchTerm);
     }
-  }, [onSearch, searchTerm]);
+  }, [onSearch, inputValue]);
 
   const handleClear = useCallback(() => {
-    setSearchTerm('');
+    setInputValue('');
+    setCurrentSearch('');
     if (onSearch) {
       onSearch('');
     }
   }, [onSearch]);
 
   const handleInputChange = useCallback((e) => {
-    setSearchTerm(e.target.value);
+    setInputValue(e.target.value);
   }, []);
 
   const handleKeyPress = useCallback((e) => {
@@ -36,7 +40,7 @@ const SearchBar = memo(({ onSearch }) => {
           <input 
             type="text" 
             placeholder="Search images by tag..." 
-            value={searchTerm} 
+            value={inputValue} 
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             className="search-input"
@@ -49,7 +53,7 @@ const SearchBar = memo(({ onSearch }) => {
           >
             Search
           </button>
-          {searchTerm && (
+          {(inputValue || currentSearch) && (
             <button 
               type="button" 
               onClick={handleClear}
@@ -61,6 +65,11 @@ const SearchBar = memo(({ onSearch }) => {
           )}
         </div>
       </form>
+      {currentSearch && (
+        <div className="current-search">
+          <span>Current search: <strong>"{currentSearch}"</strong></span>
+        </div>
+      )}
     </div>
   );
 });
