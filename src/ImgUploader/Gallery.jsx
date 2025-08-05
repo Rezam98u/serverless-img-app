@@ -8,6 +8,8 @@ function ImageGallery({ searchTerm = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [deletingImageId, setDeletingImageId] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState(null);
 
   const fetchImages = useCallback(async () => {
     console.log('🔄 Starting fetchImages...');
@@ -62,26 +64,21 @@ function ImageGallery({ searchTerm = null }) {
     }
   }, [searchTerm]);
 
-  const handleDeleteImage = async (imageId) => {
+  const handleDeleteClick = (imageId) => {
+    console.log('🖱️ Delete button clicked for image:', imageId);
+    setImageToDelete(imageId);
+    setShowConfirmDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!imageToDelete) return;
+    
     console.log('🗑️ === DELETE OPERATION STARTED ===');
-    console.log('🗑️ Image ID to delete:', imageId);
+    console.log('🗑️ Image ID to delete:', imageToDelete);
     console.log('🗑️ Current images in state:', images);
     
-    if (!imageId) {
-      console.error('❌ No imageId provided for deletion');
-      return;
-    }
-
-    // Confirm deletion
-    console.log('❓ Showing confirmation dialog...');
-    const confirmed = window.confirm('Are you sure you want to delete this image? This action cannot be undone.');
-    if (!confirmed) {
-      console.log('❌ User cancelled deletion');
-      return;
-    }
-
-    console.log('✅ User confirmed deletion, setting deleting state...');
-    setDeletingImageId(imageId);
+    setShowConfirmDialog(false);
+    setDeletingImageId(imageToDelete);
 
     try {
       // Get current user
@@ -90,13 +87,13 @@ function ImageGallery({ searchTerm = null }) {
       const userId = user.username;
       console.log('👤 Current user ID:', userId);
 
-      console.log('📤 Preparing delete request for image:', imageId, 'user:', userId);
+      console.log('📤 Preparing delete request for image:', imageToDelete, 'user:', userId);
 
       const deleteRequest = {
         apiName: 'ImageAPI',
         path: '/delete-image',
         options: {
-          body: { imageId, userId }
+          body: { imageId: imageToDelete, userId }
         }
       };
       
@@ -123,8 +120,8 @@ function ImageGallery({ searchTerm = null }) {
         setImages(prevImages => {
           console.log('🔄 setImages callback - prevImages:', prevImages);
           const newImages = prevImages.filter(img => {
-            console.log('🔄 Checking image:', img.imageId, 'against:', imageId, 'Match:', img.imageId === imageId);
-            return img.imageId !== imageId;
+            console.log('🔄 Checking image:', img.imageId, 'against:', imageToDelete, 'Match:', img.imageId === imageToDelete);
+            return img.imageId !== imageToDelete;
           });
           console.log('🔄 Removed image from state. Previous count:', prevImages.length, 'New count:', newImages.length);
           console.log('🔄 New images array:', newImages);
@@ -155,8 +152,15 @@ function ImageGallery({ searchTerm = null }) {
     } finally {
       console.log('🔄 Clearing deleting state...');
       setDeletingImageId(null);
+      setImageToDelete(null);
       console.log('✅ === DELETE OPERATION COMPLETED ===');
     }
+  };
+
+  const cancelDelete = () => {
+    console.log('❌ User cancelled deletion');
+    setShowConfirmDialog(false);
+    setImageToDelete(null);
   };
 
   useEffect(() => {
@@ -195,6 +199,64 @@ function ImageGallery({ searchTerm = null }) {
         <strong>Debug Info:</strong> Found {images.length} images
       </div>
       
+      {/* Custom Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            maxWidth: '400px',
+            textAlign: 'center'
+          }}>
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete this image?</p>
+            <p style={{ fontSize: '12px', color: '#666' }}>Image ID: {imageToDelete}</p>
+            <p style={{ fontSize: '12px', color: '#666' }}>This action cannot be undone.</p>
+            <div style={{ marginTop: '20px' }}>
+              <button 
+                onClick={confirmDelete}
+                style={{
+                  marginRight: '10px',
+                  padding: '10px 20px',
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Yes, Delete
+              </button>
+              <button 
+                onClick={cancelDelete}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#666',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {images.length === 0 ? (
         <div className="no-images">
           {searchTerm ? 'No images found for this search term.' : 'No images available.'}
@@ -219,10 +281,7 @@ function ImageGallery({ searchTerm = null }) {
                 {/* Delete button overlay */}
                 <button
                   className="delete-button"
-                  onClick={() => {
-                    console.log('🖱️ Delete button clicked for image:', img.imageId);
-                    handleDeleteImage(img.imageId);
-                  }}
+                  onClick={() => handleDeleteClick(img.imageId)}
                   disabled={deletingImageId === img.imageId}
                   title="Delete image"
                 >
