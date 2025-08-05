@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { post } from 'aws-amplify/api';
+import './UploadForm.css';
 
 function UploadForm() {
   const [file, setFile] = useState(null);
@@ -51,7 +52,7 @@ function UploadForm() {
         options: {
           body: { 
             imageUrl, 
-            tags: tags.split(',').map(t => t.trim()), 
+            tags: tags.split(',').map(t => t.trim()).filter(t => t), 
             userId, 
             timestamp: new Date().toISOString() 
           }
@@ -59,23 +60,61 @@ function UploadForm() {
       }).response;
 
       setMessage('Image uploaded successfully!');
+      setFile(null);
+      setTags('');
+      // Reset file input
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) fileInput.value = '';
     } catch (error) {
       console.error('Upload error:', error);
-      setMessage('Error uploading image');
+      setMessage('Error uploading image. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Upload Image</h2>
-      <input type="file" onChange={handleFileChange} />
-      <input type="text" placeholder="Tags (comma-separated)" value={tags} onChange={handleTagsChange} />
-      <button onClick={handleUpload} disabled={loading}>
-        {loading ? 'Uploading...' : 'Upload'}
+    <div className="upload-form">
+      <div className="form-group">
+        <label htmlFor="file-input">Select Image:</label>
+        <input 
+          id="file-input"
+          type="file" 
+          accept="image/*"
+          onChange={handleFileChange}
+          className="file-input"
+        />
+        {file && (
+          <p style={{ marginTop: '8px', fontSize: '0.9rem', color: '#666' }}>
+            Selected: {file.name}
+          </p>
+        )}
+      </div>
+      
+      <div className="form-group">
+        <label htmlFor="tags-input">Tags (comma-separated):</label>
+        <input 
+          id="tags-input"
+          type="text" 
+          placeholder="e.g., nature, landscape, sunset" 
+          value={tags} 
+          onChange={handleTagsChange}
+        />
+      </div>
+      
+      <button 
+        onClick={handleUpload} 
+        disabled={loading || !file}
+        className="upload-button"
+      >
+        {loading ? 'Uploading...' : 'Upload Image'}
       </button>
-      {message && <p>{message}</p>}
+      
+      {message && (
+        <div className={`message ${message.includes('successfully') ? 'success' : 'error'}`}>
+          {message}
+        </div>
+      )}
     </div>
   );
 }

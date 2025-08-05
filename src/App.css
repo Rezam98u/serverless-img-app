@@ -1,16 +1,59 @@
 .App {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
 }
 
-h1, h2 {
-  color: #333;
+.app-header {
+  text-align: center;
+  margin-bottom: 40px;
+  color: white;
 }
 
-input, button {
-  margin: 5px;
-  padding: 5px;
+.app-header h1 {
+  font-size: 2.5rem;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
 }
 
-img {
-  max-width: 100%;
+.app-main {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.upload-section,
+.search-section,
+.gallery-section {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  overflow: hidden;
+}
+
+.upload-section h2,
+.search-section h2 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin: 0;
+  padding: 20px;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .App {
+    padding: 15px;
+  }
+  
+  .app-header h1 {
+    font-size: 2rem;
+  }
+  
+  .upload-section,
+  .search-section,
+  .gallery-section {
+    margin-bottom: 20px;
+  }
 }
