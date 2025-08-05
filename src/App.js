@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { withAuthenticator } from '@aws-amplify/ui-react';
 import UploadForm from "./ImgUploader/UploadForm";
 import SearchBar from './ImgUploader/SearchBar';
 import ImageGallery from './ImgUploader/Gallery';
 import './App.css';
 
+// Memoized components to prevent unnecessary re-renders
+const MemoizedUploadForm = memo(UploadForm);
+const MemoizedSearchBar = memo(SearchBar);
+const MemoizedImageGallery = memo(ImageGallery);
+
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handleSearch = (term) => {
+  // Memoized callback to prevent unnecessary re-renders
+  const handleSearch = useCallback((term) => {
     setSearchTerm(term);
-  };
+  }, []);
 
   return (
     <div className="App">
@@ -21,16 +27,16 @@ function App() {
       <main className="app-main">
         <section className="upload-section">
           <h2>Upload Images</h2>
-          <UploadForm />
+          <MemoizedUploadForm />
         </section>
         
         <section className="search-section">
           <h2>Search & Browse Images</h2>
-          <SearchBar onSearch={handleSearch} />
+          <MemoizedSearchBar onSearch={handleSearch} />
         </section>
         
         <section className="gallery-section">
-          <ImageGallery searchTerm={searchTerm} />
+          <MemoizedImageGallery searchTerm={searchTerm} />
         </section>
       </main>
     </div>
