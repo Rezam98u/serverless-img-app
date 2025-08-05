@@ -16,9 +16,18 @@ function ImageGallery({ searchTerm = null }) {
     setError(null);
     
     try {
-      const options = searchTerm 
-        ? { queryStringParameters: { tag: searchTerm } }
-        : {};
+      let options = {};
+      
+      // Only add query parameters if there's a search term
+      if (searchTerm && searchTerm.trim() !== '') {
+        options = {
+          queryStringParameters: { 
+            tag: searchTerm.trim() 
+          }
+        };
+      }
+        
+      console.log('Making API request with options:', options);
         
       const response = await get({
         apiName: 'ImageAPI',
