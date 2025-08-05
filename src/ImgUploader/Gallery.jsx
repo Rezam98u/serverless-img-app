@@ -28,6 +28,14 @@ function ImageGallery({ searchTerm = null }) {
 
       const data = await response.body.json();
       console.log('Fetched images:', data);
+      
+      // Check if the response contains an error
+      if (data.errorType || data.errorMessage) {
+        console.error('Lambda function error:', data);
+        setError('Server error: Please try again later or contact support.');
+        return;
+      }
+      
       setImages(data.images || []);
     } catch (error) {
       console.error('Error fetching images:', error);
