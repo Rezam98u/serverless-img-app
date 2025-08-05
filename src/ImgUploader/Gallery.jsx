@@ -50,6 +50,10 @@ function ImageGallery({ searchTerm = null }) {
 
       const data = await response.body.json();
       console.log('Fetched images:', data);
+      console.log('Data type:', typeof data);
+      console.log('Data keys:', Object.keys(data));
+      console.log('Data.body type:', typeof data.body);
+      console.log('Data.body length:', data.body ? data.body.length : 0);
       
       // Check if the response contains an error
       if (data.errorType || data.errorMessage) {
@@ -63,8 +67,10 @@ function ImageGallery({ searchTerm = null }) {
       if (typeof data.body === 'string') {
         try {
           const parsedBody = JSON.parse(data.body);
+          console.log('Parsed body:', parsedBody);
           images = parsedBody.images || [];
           console.log('Parsed body images:', images);
+          console.log('Images length:', images.length);
         } catch (parseError) {
           console.error('Error parsing response body:', parseError);
           setError('Error parsing server response.');
@@ -76,6 +82,7 @@ function ImageGallery({ searchTerm = null }) {
         console.log('Direct images:', images);
       } else {
         images = [];
+        console.log('No images found in response');
       }
       
       // Filter out invalid entries
@@ -87,6 +94,7 @@ function ImageGallery({ searchTerm = null }) {
       );
       
       console.log('Valid images:', validImages);
+      console.log('Valid images length:', validImages.length);
       setImages(validImages);
       
       if (validImages.length === 0 && images.length > 0) {
