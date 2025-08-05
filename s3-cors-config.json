@@ -1,0 +1,28 @@
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": ["*"],
+      "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "AllowedHeaders": [
+        "Authorization",
+        "Content-Length",
+        "Content-Type",
+        "Date",
+        "ETag",
+        "User-Agent",
+        "x-amz-content-sha256",
+        "x-amz-date",
+        "x-amz-security-token",
+        "x-amz-checksum-crc32",
+        "x-amz-sdk-checksum-algorithm"
+      ],
+      "ExposeHeaders": [
+        "ETag",
+        "x-amz-version-id",
+        "x-amz-delete-marker",
+        "x-amz-checksum-crc32"
+      ],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}
