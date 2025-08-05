@@ -1,0 +1,15 @@
+{
+    "item": [
+        {
+            "deploymentId": "hc9col",
+            "stageName": "prod",
+            "cacheClusterEnabled": false,
+            "cacheClusterSize": "0.5",
+            "cacheClusterStatus": "NOT_AVAILABLE",
+            "methodSettings": {},
+            "tracingEnabled": false,
+            "createdDate": "2025-08-02T14:33:34+01:00",
+            "lastUpdatedDate": "2025-08-05T10:59:51+01:00"
+        }
+    ]
+}

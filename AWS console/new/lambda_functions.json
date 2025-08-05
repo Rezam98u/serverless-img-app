@@ -1,0 +1,103 @@
+{
+    "Functions": [
+        {
+            "FunctionName": "SaveImageMetadata",
+            "FunctionArn": "arn:aws:lambda:eu-north-1:288028158417:function:SaveImageMetadata",
+            "Runtime": "nodejs22.x",
+            "Role": "arn:aws:iam::288028158417:role/service-role/SaveImageMetadata-role-drtvhmme",
+            "Handler": "index.handler",
+            "CodeSize": 3200360,
+            "Description": "",
+            "Timeout": 3,
+            "MemorySize": 128,
+            "LastModified": "2025-08-04T10:02:25.000+0000",
+            "CodeSha256": "800bhdfzmIgDubhwMFSoP21gYyyz7iIUugrP6dzzDBs=",
+            "Version": "$LATEST",
+            "TracingConfig": {
+                "Mode": "PassThrough"
+            },
+            "RevisionId": "6d5e9609-2ba7-4282-baab-2ea82a658d07",
+            "PackageType": "Zip",
+            "Architectures": [
+                "x86_64"
+            ],
+            "EphemeralStorage": {
+                "Size": 512
+            },
+            "SnapStart": {
+                "ApplyOn": "None",
+                "OptimizationStatus": "Off"
+            },
+            "LoggingConfig": {
+                "LogFormat": "Text",
+                "LogGroup": "/aws/lambda/SaveImageMetadata"
+            }
+        },
+        {
+            "FunctionName": "ProcessS3Upload",
+            "FunctionArn": "arn:aws:lambda:eu-north-1:288028158417:function:ProcessS3Upload",
+            "Runtime": "nodejs22.x",
+            "Role": "arn:aws:iam::288028158417:role/service-role/ProcessS3Upload-role-j90nft8p",
+            "Handler": "index.handler",
+            "CodeSize": 3830511,
+            "Description": "",
+            "Timeout": 3,
+            "MemorySize": 128,
+            "LastModified": "2025-08-05T11:39:43.000+0000",
+            "CodeSha256": "mqXPPsEUUTynEzPgv9MCjjPd3emB/WHFXURv3FepFJo=",
+            "Version": "$LATEST",
+            "TracingConfig": {
+                "Mode": "PassThrough"
+            },
+            "RevisionId": "8ae19968-afb0-44f1-89e6-77323cac5917",
+            "PackageType": "Zip",
+            "Architectures": [
+                "x86_64"
+            ],
+            "EphemeralStorage": {
+                "Size": 512
+            },
+            "SnapStart": {
+                "ApplyOn": "None",
+                "OptimizationStatus": "Off"
+            },
+            "LoggingConfig": {
+                "LogFormat": "Text",
+                "LogGroup": "/aws/lambda/ProcessS3Upload"
+            }
+        },
+        {
+            "FunctionName": "SearchImages",
+            "FunctionArn": "arn:aws:lambda:eu-north-1:288028158417:function:SearchImages",
+            "Runtime": "nodejs22.x",
+            "Role": "arn:aws:iam::288028158417:role/service-role/SearchImages-role-6mc05893",
+            "Handler": "index.handler",
+            "CodeSize": 3200322,
+            "Description": "",
+            "Timeout": 3,
+            "MemorySize": 128,
+            "LastModified": "2025-08-04T10:05:43.000+0000",
+            "CodeSha256": "ZNLk5/+dKgBxJIq4TJ2kI9UKM+VI9s8Q1cN10lnNKjI=",
+            "Version": "$LATEST",
+            "TracingConfig": {
+                "Mode": "PassThrough"
+            },
+            "RevisionId": "58442b48-f9a9-48bc-aaf8-b27a1058d98a",
+            "PackageType": "Zip",
+            "Architectures": [
+                "x86_64"
+            ],
+            "EphemeralStorage": {
+                "Size": 512
+            },
+            "SnapStart": {
+                "ApplyOn": "None",
+                "OptimizationStatus": "Off"
+            },
+            "LoggingConfig": {
+                "LogFormat": "Text",
+                "LogGroup": "/aws/lambda/SearchImages"
+            }
+        }
+    ]
+}

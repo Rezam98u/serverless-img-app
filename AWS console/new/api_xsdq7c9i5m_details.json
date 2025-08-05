@@ -1,0 +1,19 @@
+{
+    "id": "xsdq7c9i5m",
+    "name": "S3LambdaAPI",
+    "createdDate": "2025-08-02T14:30:11+01:00",
+    "binaryMediaTypes": [
+        "multipart/form-data",
+        "image/jpg"
+    ],
+    "apiKeySource": "HEADER",
+    "endpointConfiguration": {
+        "types": [
+            "REGIONAL"
+        ],
+        "ipAddressType": "ipv4"
+    },
+    "tags": {},
+    "disableExecuteApiEndpoint": false,
+    "rootResourceId": "lahrlzk215"
+}
