@@ -64,13 +64,18 @@ function ImageGallery({ searchTerm = null }) {
         try {
           const parsedBody = JSON.parse(data.body);
           images = parsedBody.images || [];
+          console.log('Parsed body images:', images);
         } catch (parseError) {
           console.error('Error parsing response body:', parseError);
           setError('Error parsing server response.');
           return;
         }
+      } else if (data.images) {
+        // If images are directly in the response
+        images = data.images;
+        console.log('Direct images:', images);
       } else {
-        images = data.images || [];
+        images = [];
       }
       
       // Filter out invalid entries
