@@ -70,6 +70,36 @@ function ImageGallery({ searchTerm = null }) {
     }
   }, [searchTerm]);
 
+  const testDeleteEndpoint = async () => {
+    addDebugInfo('=== TESTING DELETE ENDPOINT ===');
+    try {
+      const user = await getCurrentUser();
+      const userId = user.username;
+      addDebugInfo(`Testing with user: ${userId}`);
+      
+      const testRequest = {
+        apiName: 'ImageAPI',
+        path: '/delete-image',
+        options: {
+          body: { imageId: 'test-image-id', userId }
+        }
+      };
+      
+      addDebugInfo(`Test request: ${JSON.stringify(testRequest)}`);
+      
+      const response = await post(testRequest).response;
+      const result = await response.body.json();
+      addDebugInfo(`Test response: ${JSON.stringify(result)}`);
+      
+    } catch (error) {
+      addDebugInfo(`Test failed: ${error.message}`);
+      if (error.message && error.message.includes('404')) {
+        addDebugInfo('CONFIRMED: Delete endpoint does not exist');
+        alert('Delete endpoint /delete-image does not exist. You need to create it in API Gateway.');
+      }
+    }
+  };
+
   const handleDeleteImage = async (imageId) => {
     addDebugInfo(`=== DELETE OPERATION STARTED ===`);
     addDebugInfo(`Image ID to delete: ${imageId}`);
@@ -110,27 +140,43 @@ function ImageGallery({ searchTerm = null }) {
       addDebugInfo(`Delete request config: ${JSON.stringify(deleteRequest)}`);
 
       addDebugInfo('Sending delete request to API...');
-      const response = await post(deleteRequest).response;
-
-      addDebugInfo('Delete response received, parsing...');
-      const result = await response.body.json();
-      addDebugInfo(`Delete response: ${JSON.stringify(result)}`);
-
-      if (result.error) {
-        addDebugInfo(`Delete failed with error: ${result.error}`);
-        throw new Error(result.error);
-      }
-
-      addDebugInfo('Delete successful, updating local state...');
-      // Remove the image from the local state
-      setImages(prevImages => {
-        const newImages = prevImages.filter(img => img.imageId !== imageId);
-        addDebugInfo(`Removed image from state. Previous count: ${prevImages.length}, New count: ${newImages.length}`);
-        return newImages;
-      });
       
-      addDebugInfo('Showing success message...');
-      alert('Image deleted successfully!');
+      // Add more detailed error handling for the API call
+      try {
+        const response = await post(deleteRequest).response;
+        addDebugInfo('Delete response received, parsing...');
+        const result = await response.body.json();
+        addDebugInfo(`Delete response: ${JSON.stringify(result)}`);
+
+        if (result.error) {
+          addDebugInfo(`Delete failed with error: ${result.error}`);
+          throw new Error(result.error);
+        }
+
+        addDebugInfo('Delete successful, updating local state...');
+        // Remove the image from the local state
+        setImages(prevImages => {
+          const newImages = prevImages.filter(img => img.imageId !== imageId);
+          addDebugInfo(`Removed image from state. Previous count: ${prevImages.length}, New count: ${newImages.length}`);
+          return newImages;
+        });
+        
+        addDebugInfo('Showing success message...');
+        alert('Image deleted successfully!');
+
+      } catch (apiError) {
+        addDebugInfo(`API call failed: ${apiError.message}`);
+        addDebugInfo(`API error type: ${apiError.name}`);
+        addDebugInfo(`API error stack: ${apiError.stack}`);
+        
+        // Check if it's a 404 (endpoint not found)
+        if (apiError.message && apiError.message.includes('404')) {
+          addDebugInfo('ERROR: Delete endpoint not found. You need to create the /delete-image API endpoint.');
+          alert('Delete endpoint not found. Please create the API endpoint first.');
+        } else {
+          throw apiError; // Re-throw to be caught by outer catch
+        }
+      }
 
     } catch (error) {
       addDebugInfo(`ERROR in delete operation: ${error.message}`);
@@ -184,20 +230,35 @@ function ImageGallery({ searchTerm = null }) {
       {/* Debug Panel */}
       <div className="debug-panel">
         <h3>Debug Log:</h3>
-        <button 
-          onClick={() => setDebugInfo('')} 
-          style={{ 
-            marginBottom: '10px', 
-            padding: '5px 10px', 
-            backgroundColor: '#ff9800', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px', 
-            cursor: 'pointer' 
-          }}
-        >
-          Clear Debug Log
-        </button>
+        <div style={{ marginBottom: '10px' }}>
+          <button 
+            onClick={() => setDebugInfo('')} 
+            style={{ 
+              marginRight: '10px',
+              padding: '5px 10px', 
+              backgroundColor: '#ff9800', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer' 
+            }}
+          >
+            Clear Debug Log
+          </button>
+          <button 
+            onClick={testDeleteEndpoint} 
+            style={{ 
+              padding: '5px 10px', 
+              backgroundColor: '#f44336', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer' 
+            }}
+          >
+            Test Delete Endpoint
+          </button>
+        </div>
         <pre style={{ 
           maxHeight: '200px', 
           overflow: 'auto', 
