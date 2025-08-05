@@ -8,17 +8,9 @@ function ImageGallery({ searchTerm = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [deletingImageId, setDeletingImageId] = useState(null);
-  const [debugInfo, setDebugInfo] = useState('');
-
-  const addDebugInfo = (message) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const newDebugInfo = `[${timestamp}] ${message}\n`;
-    setDebugInfo(prev => prev + newDebugInfo);
-    console.log(`[DEBUG] ${message}`);
-  };
 
   const fetchImages = useCallback(async () => {
-    addDebugInfo('Starting fetchImages...');
+    console.log('🔄 Starting fetchImages...');
     setLoading(true);
     setError(null);
     
@@ -33,7 +25,7 @@ function ImageGallery({ searchTerm = null }) {
         };
       }
         
-      addDebugInfo(`Making API request with options: ${JSON.stringify(options)}`);
+      console.log('📡 Making API request with options:', options);
         
       const response = await get({
         apiName: 'ImageAPI',
@@ -42,7 +34,7 @@ function ImageGallery({ searchTerm = null }) {
       }).response;
 
       const data = await response.body.json();
-      addDebugInfo(`Raw response data received: ${JSON.stringify(data).substring(0, 200)}...`);
+      console.log('📥 Raw response data:', data);
       
       // Simple parsing - the data.body contains the actual response
       let images = [];
@@ -50,84 +42,54 @@ function ImageGallery({ searchTerm = null }) {
         try {
           const parsedBody = JSON.parse(data.body);
           images = parsedBody.images || [];
-          addDebugInfo(`Successfully parsed ${images.length} images from response`);
+          console.log('✅ Successfully parsed images:', images.length);
         } catch (parseError) {
-          addDebugInfo(`Parse error: ${parseError.message}`);
+          console.error('❌ Parse error:', parseError);
           setError('Error parsing response');
           return;
         }
       }
       
-      addDebugInfo(`Setting ${images.length} images to state`);
+      console.log('🖼️ Setting images to state:', images);
       setImages(images);
       
     } catch (error) {
-      addDebugInfo(`Error fetching images: ${error.message}`);
+      console.error('❌ Error fetching images:', error);
       setError('Failed to fetch images. Please try again.');
     } finally {
       setLoading(false);
-      addDebugInfo('fetchImages completed');
+      console.log('✅ fetchImages completed');
     }
   }, [searchTerm]);
 
-  const testDeleteEndpoint = async () => {
-    addDebugInfo('=== TESTING DELETE ENDPOINT ===');
-    try {
-      const user = await getCurrentUser();
-      const userId = user.username;
-      addDebugInfo(`Testing with user: ${userId}`);
-      
-      const testRequest = {
-        apiName: 'ImageAPI',
-        path: '/delete-image',
-        options: {
-          body: { imageId: 'test-image-id', userId }
-        }
-      };
-      
-      addDebugInfo(`Test request: ${JSON.stringify(testRequest)}`);
-      
-      const response = await post(testRequest).response;
-      const result = await response.body.json();
-      addDebugInfo(`Test response: ${JSON.stringify(result)}`);
-      
-    } catch (error) {
-      addDebugInfo(`Test failed: ${error.message}`);
-      if (error.message && error.message.includes('404')) {
-        addDebugInfo('CONFIRMED: Delete endpoint does not exist');
-        alert('Delete endpoint /delete-image does not exist. You need to create it in API Gateway.');
-      }
-    }
-  };
-
   const handleDeleteImage = async (imageId) => {
-    addDebugInfo(`=== DELETE OPERATION STARTED ===`);
-    addDebugInfo(`Image ID to delete: ${imageId}`);
+    console.log('🗑️ === DELETE OPERATION STARTED ===');
+    console.log('🗑️ Image ID to delete:', imageId);
     
     if (!imageId) {
-      addDebugInfo('ERROR: No imageId provided for deletion');
+      console.error('❌ No imageId provided for deletion');
       return;
     }
 
     // Confirm deletion
-    addDebugInfo('Showing confirmation dialog...');
+    console.log('❓ Showing confirmation dialog...');
     const confirmed = window.confirm('Are you sure you want to delete this image? This action cannot be undone.');
     if (!confirmed) {
-      addDebugInfo('User cancelled deletion');
+      console.log('❌ User cancelled deletion');
       return;
     }
 
-    addDebugInfo('User confirmed deletion, setting deleting state...');
+    console.log('✅ User confirmed deletion, setting deleting state...');
     setDeletingImageId(imageId);
 
     try {
       // Get current user
-      addDebugInfo('Getting current user...');
+      console.log('👤 Getting current user...');
       const user = await getCurrentUser();
       const userId = user.username;
-      addDebugInfo(`Current user ID: ${userId}`);
+      console.log('👤 Current user ID:', userId);
 
-      addDebugInfo(`Preparing delete request for image: ${imageId}, user: ${userId}`);
+      console.log('📤 Preparing delete request for image:', imageId, 'user:', userId);
 
       const deleteRequest = {
         apiName: 'ImageAPI',
@@ -137,41 +99,41 @@ function ImageGallery({ searchTerm = null }) {
         }
       };
       
-      addDebugInfo(`Delete request config: ${JSON.stringify(deleteRequest)}`);
+      console.log('📤 Delete request config:', deleteRequest);
 
-      addDebugInfo('Sending delete request to API...');
+      console.log('📡 Sending delete request to API...');
       
       // Add more detailed error handling for the API call
       try {
         const response = await post(deleteRequest).response;
-        addDebugInfo('Delete response received, parsing...');
+        console.log('📥 Delete response received, parsing...');
         const result = await response.body.json();
-        addDebugInfo(`Delete response: ${JSON.stringify(result)}`);
+        console.log('📥 Delete response:', result);
 
         if (result.error) {
-          addDebugInfo(`Delete failed with error: ${result.error}`);
+          console.error('❌ Delete failed with error:', result.error);
           throw new Error(result.error);
         }
 
-        addDebugInfo('Delete successful, updating local state...');
+        console.log('✅ Delete successful, updating local state...');
         // Remove the image from the local state
         setImages(prevImages => {
           const newImages = prevImages.filter(img => img.imageId !== imageId);
-          addDebugInfo(`Removed image from state. Previous count: ${prevImages.length}, New count: ${newImages.length}`);
+          console.log('🔄 Removed image from state. Previous count:', prevImages.length, 'New count:', newImages.length);
           return newImages;
         });
         
-        addDebugInfo('Showing success message...');
+        console.log('✅ Showing success message...');
         alert('Image deleted successfully!');
 
       } catch (apiError) {
-        addDebugInfo(`API call failed: ${apiError.message}`);
-        addDebugInfo(`API error type: ${apiError.name}`);
-        addDebugInfo(`API error stack: ${apiError.stack}`);
+        console.error('❌ API call failed:', apiError);
+        console.error('❌ API error type:', apiError.name);
+        console.error('❌ API error stack:', apiError.stack);
         
         // Check if it's a 404 (endpoint not found)
         if (apiError.message && apiError.message.includes('404')) {
-          addDebugInfo('ERROR: Delete endpoint not found. You need to create the /delete-image API endpoint.');
+          console.error('❌ Delete endpoint not found. You need to create the /delete-image API endpoint.');
           alert('Delete endpoint not found. Please create the API endpoint first.');
         } else {
           throw apiError; // Re-throw to be caught by outer catch
@@ -179,18 +141,18 @@ function ImageGallery({ searchTerm = null }) {
       }
 
     } catch (error) {
-      addDebugInfo(`ERROR in delete operation: ${error.message}`);
-      addDebugInfo(`Error stack: ${error.stack}`);
+      console.error('❌ ERROR in delete operation:', error);
+      console.error('❌ Error stack:', error.stack);
       alert(`Failed to delete image: ${error.message}`);
     } finally {
-      addDebugInfo('Clearing deleting state...');
+      console.log('🔄 Clearing deleting state...');
       setDeletingImageId(null);
-      addDebugInfo('=== DELETE OPERATION COMPLETED ===');
+      console.log('✅ === DELETE OPERATION COMPLETED ===');
     }
   };
 
   useEffect(() => {
-    addDebugInfo('Gallery component mounted, fetching images...');
+    console.log('🚀 Gallery component mounted, fetching images...');
     fetchImages();
   }, [fetchImages]);
 
@@ -198,10 +160,6 @@ function ImageGallery({ searchTerm = null }) {
     return (
       <div className="gallery-container">
         <div className="loading">Loading images...</div>
-        <div className="debug-panel">
-          <h3>Debug Info:</h3>
-          <pre>{debugInfo}</pre>
-        </div>
       </div>
     );
   }
@@ -211,10 +169,6 @@ function ImageGallery({ searchTerm = null }) {
       <div className="gallery-container">
         <div className="error">{error}</div>
         <button onClick={fetchImages} className="retry-button">Retry</button>
-        <div className="debug-panel">
-          <h3>Debug Info:</h3>
-          <pre>{debugInfo}</pre>
-        </div>
       </div>
     );
   }
@@ -225,52 +179,6 @@ function ImageGallery({ searchTerm = null }) {
       
       <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
         <strong>Debug Info:</strong> Found {images.length} images
-      </div>
-      
-      {/* Debug Panel */}
-      <div className="debug-panel">
-        <h3>Debug Log:</h3>
-        <div style={{ marginBottom: '10px' }}>
-          <button 
-            onClick={() => setDebugInfo('')} 
-            style={{ 
-              marginRight: '10px',
-              padding: '5px 10px', 
-              backgroundColor: '#ff9800', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer' 
-            }}
-          >
-            Clear Debug Log
-          </button>
-          <button 
-            onClick={testDeleteEndpoint} 
-            style={{ 
-              padding: '5px 10px', 
-              backgroundColor: '#f44336', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer' 
-            }}
-          >
-            Test Delete Endpoint
-          </button>
-        </div>
-        <pre style={{ 
-          maxHeight: '200px', 
-          overflow: 'auto', 
-          backgroundColor: '#f5f5f5', 
-          padding: '10px', 
-          border: '1px solid #ddd', 
-          borderRadius: '4px',
-          fontSize: '12px',
-          whiteSpace: 'pre-wrap'
-        }}>
-          {debugInfo || 'No debug info yet...'}
-        </pre>
       </div>
       
       {images.length === 0 ? (
@@ -287,18 +195,18 @@ function ImageGallery({ searchTerm = null }) {
                   alt={img.tags ? img.tags.join(', ') : 'Image'} 
                   className="gallery-image"
                   onError={(e) => {
-                    addDebugInfo(`Image failed to load: ${img.url}`);
+                    console.log('❌ Image failed to load:', img.url);
                     e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
                   }}
                   onLoad={() => {
-                    addDebugInfo(`Image loaded successfully: ${img.url}`);
+                    console.log('✅ Image loaded successfully:', img.url);
                   }}
                 />
                 {/* Delete button overlay */}
                 <button
                   className="delete-button"
                   onClick={() => {
-                    addDebugInfo(`Delete button clicked for image: ${img.imageId}`);
+                    console.log('🖱️ Delete button clicked for image:', img.imageId);
                     handleDeleteImage(img.imageId);
                   }}
                   disabled={deletingImageId === img.imageId}
