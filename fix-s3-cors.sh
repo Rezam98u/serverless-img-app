@@ -3,7 +3,7 @@
 # Script to configure S3 CORS for your bucket
 # Make sure you have AWS CLI configured with proper credentials
 
-BUCKET_NAME="my-react-lambda-demo-2025"
+BUCKET_NAME="snapvault-images-reza"
 CORS_CONFIG_FILE="s3-cors-config.json"
 
 echo "🔧 Configuring CORS for S3 bucket: $BUCKET_NAME"

@@ -19,7 +19,7 @@ Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remot
 2. **Or manually with AWS CLI:**
    ```bash
    aws s3api put-bucket-cors \
-     --bucket my-react-lambda-demo-2025 \
+     --bucket snapvault-images-reza \
      --cors-configuration file://s3-cors-config.json
    ```
 
@@ -27,7 +27,7 @@ Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remot
 
 1. **Go to S3 Console:**
    - Navigate to https://console.aws.amazon.com/s3/
-   - Click on your bucket: `my-react-lambda-demo-2025`
+   - Click on your bucket: `snapvault-images-reza`
 
 2. **Configure CORS:**
    - Click on "Permissions" tab
@@ -84,7 +84,7 @@ import { S3Client, PutBucketCorsCommand } from '@aws-sdk/client-s3';
 const s3Client = new S3Client({ region: 'eu-north-1' });
 
 const corsParams = {
-  Bucket: 'my-react-lambda-demo-2025',
+  Bucket: 'snapvault-images-reza',
   CORSConfiguration: {
     CORSRules: [
       {
@@ -128,7 +128,7 @@ try {
 After applying the configuration, verify it works:
 
 ```bash
-aws s3api get-bucket-cors --bucket my-react-lambda-demo-2025
+aws s3api get-bucket-cors --bucket snapvault-images-reza
 ```
 
 ## 🚀 After Fixing CORS
@@ -154,7 +154,7 @@ The current configuration uses `"AllowedOrigins": ["*"]` which allows any domain
 1. **Wait a few minutes** - CORS changes can take time to propagate
 2. **Clear browser cache** - Old CORS policies might be cached
 3. **Check bucket permissions** - Ensure your AWS credentials have permission to modify bucket CORS
-4. **Verify bucket name** - Make sure `my-react-lambda-demo-2025` is correct
+4. **Verify bucket name** - Make sure `snapvault-images-reza` is correct
 
 ### If you get permission errors:
 
@@ -166,7 +166,7 @@ Make sure your AWS credentials have these permissions:
 
 After fixing CORS, your browser console should show:
 ```
-Upload URL received: https://my-react-lambda-demo-2025.s3.eu-north-1.amazonaws.com/uploads/...
+Upload URL received: https://snapvault-images-reza.s3.eu-north-1.amazonaws.com/uploads/...
 S3 upload successful
 Image uploaded successfully!
 ```

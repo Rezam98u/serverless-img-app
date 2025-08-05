@@ -3,7 +3,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 const s3 = new S3Client({ region: 'eu-north-1' });
-const BUCKET_NAME = 'my-react-lambda-demo-2025';
+const BUCKET_NAME = 'snapvault-images-reza';
 
 export const handler = async (event) => {
   // Add CORS headers for all responses

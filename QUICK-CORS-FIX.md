@@ -1,13 +1,13 @@
 # 🚨 URGENT: Fix S3 CORS in 2 Minutes
 
 ## 🎯 The Problem
-Your S3 bucket `my-react-lambda-demo-2025` doesn't have CORS configured, so browsers block the upload.
+Your S3 bucket `snapvault-images-reza` doesn't have CORS configured, so browsers block the upload.
 
 ## ⚡ Quick Fix (AWS Console)
 
 ### Step 1: Open AWS S3 Console
 1. Go to: https://console.aws.amazon.com/s3/
-2. Find and click on bucket: **`my-react-lambda-demo-2025`**
+2. Find and click on bucket: **`snapvault-images-reza`**
 
 ### Step 2: Configure CORS
 1. Click on **"Permissions"** tab
@@ -65,7 +65,7 @@ Your S3 bucket `my-react-lambda-demo-2025` doesn't have CORS configured, so brow
 
 **Before (Current Error):**
 ```
-Access to fetch at 'https://my-react-lambda-demo-2025.s3.eu-north-1.amazonaws.com...' 
+Access to fetch at 'https://snapvault-images-reza.s3.eu-north-1.amazonaws.com...' 
 has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header
 ```
 
@@ -93,7 +93,7 @@ If you're on mobile, you can also do this via the AWS Console mobile app:
 1. **Clear browser cache** (Ctrl+Shift+R or Cmd+Shift+R)
 2. **Wait 2-3 minutes** for full propagation
 3. **Try in incognito/private browser window**
-4. **Check the bucket name** is exactly: `my-react-lambda-demo-2025`
+4. **Check the bucket name** is exactly: `snapvault-images-reza`
 
 ## ✅ Success Indicators
 
