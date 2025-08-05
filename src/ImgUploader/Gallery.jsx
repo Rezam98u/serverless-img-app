@@ -65,6 +65,7 @@ function ImageGallery({ searchTerm = null }) {
   const handleDeleteImage = async (imageId) => {
     console.log('🗑️ === DELETE OPERATION STARTED ===');
     console.log('🗑️ Image ID to delete:', imageId);
+    console.log('🗑️ Current images in state:', images);
     
     if (!imageId) {
       console.error('❌ No imageId provided for deletion');
@@ -116,10 +117,17 @@ function ImageGallery({ searchTerm = null }) {
         }
 
         console.log('✅ Delete successful, updating local state...');
+        console.log('🔄 Current images before removal:', images);
+        
         // Remove the image from the local state
         setImages(prevImages => {
-          const newImages = prevImages.filter(img => img.imageId !== imageId);
+          console.log('🔄 setImages callback - prevImages:', prevImages);
+          const newImages = prevImages.filter(img => {
+            console.log('🔄 Checking image:', img.imageId, 'against:', imageId, 'Match:', img.imageId === imageId);
+            return img.imageId !== imageId;
+          });
           console.log('🔄 Removed image from state. Previous count:', prevImages.length, 'New count:', newImages.length);
+          console.log('🔄 New images array:', newImages);
           return newImages;
         });
         
@@ -155,6 +163,12 @@ function ImageGallery({ searchTerm = null }) {
     console.log('🚀 Gallery component mounted, fetching images...');
     fetchImages();
   }, [fetchImages]);
+
+  // Monitor images state changes
+  useEffect(() => {
+    console.log('🖼️ Images state changed:', images.length, 'images');
+    console.log('🖼️ Images IDs:', images.map(img => img.imageId));
+  }, [images]);
 
   if (loading) {
     return (
