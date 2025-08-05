@@ -36,7 +36,35 @@ function ImageGallery({ searchTerm = null }) {
         return;
       }
       
-      setImages(data.images || []);
+      // Parse the body if it's a string
+      let images = [];
+      if (typeof data.body === 'string') {
+        try {
+          const parsedBody = JSON.parse(data.body);
+          images = parsedBody.images || [];
+        } catch (parseError) {
+          console.error('Error parsing response body:', parseError);
+          setError('Error parsing server response.');
+          return;
+        }
+      } else {
+        images = data.images || [];
+      }
+      
+      // Filter out invalid entries
+      const validImages = images.filter(img => 
+        img.url && img.url.trim() !== '' && 
+        img.imageId && img.imageId !== 'timestamp' && 
+        img.imageId !== 'tags' && img.imageId !== 'url' && 
+        img.imageId !== 'userId'
+      );
+      
+      console.log('Valid images:', validImages);
+      setImages(validImages);
+      
+      if (validImages.length === 0 && images.length > 0) {
+        setError('No valid images found. The database may contain invalid entries.');
+      }
     } catch (error) {
       console.error('Error fetching images:', error);
       setError('Failed to fetch images. Please try again.');
