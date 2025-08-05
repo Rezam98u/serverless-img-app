@@ -6,20 +6,10 @@ function ImageGallery({ searchTerm = null }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [lastSearchTerm, setLastSearchTerm] = useState('');
 
-  useEffect(() => {
-    // Only fetch if searchTerm changed or on initial load
-    if (searchTerm !== lastSearchTerm) {
-      setLastSearchTerm(searchTerm);
-      fetchImages();
-    }
-  }, [searchTerm]);
-
-  // Initial load
   useEffect(() => {
     fetchImages();
-  }, []);
+  }, [searchTerm]);
 
   const fetchImages = async () => {
     setLoading(true);
@@ -28,7 +18,6 @@ function ImageGallery({ searchTerm = null }) {
     try {
       let options = {};
       
-      // Only add query parameters if there's a search term
       if (searchTerm && searchTerm.trim() !== '') {
         options = {
           queryStringParameters: { 
@@ -38,9 +27,6 @@ function ImageGallery({ searchTerm = null }) {
       }
         
       console.log('Making API request with options:', options);
-      console.log('Search term:', searchTerm);
-      console.log('Search term type:', typeof searchTerm);
-      console.log('Search term length:', searchTerm ? searchTerm.length : 0);
         
       const response = await get({
         apiName: 'ImageAPI',
@@ -49,57 +35,25 @@ function ImageGallery({ searchTerm = null }) {
       }).response;
 
       const data = await response.body.json();
-      console.log('Fetched images:', data);
-      console.log('Data type:', typeof data);
-      console.log('Data keys:', Object.keys(data));
-      console.log('Data.body type:', typeof data.body);
-      console.log('Data.body length:', data.body ? data.body.length : 0);
+      console.log('Raw response data:', data);
       
-      // Check if the response contains an error
-      if (data.errorType || data.errorMessage) {
-        console.error('Lambda function error:', data);
-        setError('Server error: Please try again later or contact support.');
-        return;
-      }
-      
-      // Parse the body if it's a string
+      // Simple parsing - the data.body contains the actual response
       let images = [];
-      if (typeof data.body === 'string') {
+      if (data.body) {
         try {
           const parsedBody = JSON.parse(data.body);
-          console.log('Parsed body:', parsedBody);
           images = parsedBody.images || [];
-          console.log('Parsed body images:', images);
-          console.log('Images length:', images.length);
+          console.log('Successfully parsed images:', images.length);
         } catch (parseError) {
-          console.error('Error parsing response body:', parseError);
-          setError('Error parsing server response.');
+          console.error('Parse error:', parseError);
+          setError('Error parsing response');
           return;
         }
-      } else if (data.images) {
-        // If images are directly in the response
-        images = data.images;
-        console.log('Direct images:', images);
-      } else {
-        images = [];
-        console.log('No images found in response');
       }
       
-      // Filter out invalid entries
-      const validImages = images.filter(img => 
-        img.url && img.url.trim() !== '' && 
-        img.imageId && img.imageId !== 'timestamp' && 
-        img.imageId !== 'tags' && img.imageId !== 'url' && 
-        img.imageId !== 'userId'
-      );
+      console.log('Setting images:', images);
+      setImages(images);
       
-      console.log('Valid images:', validImages);
-      console.log('Valid images length:', validImages.length);
-      setImages(validImages);
-      
-      if (validImages.length === 0 && images.length > 0) {
-        setError('No valid images found. The database may contain invalid entries.');
-      }
     } catch (error) {
       console.error('Error fetching images:', error);
       setError('Failed to fetch images. Please try again.');
@@ -129,24 +83,9 @@ function ImageGallery({ searchTerm = null }) {
     <div className="gallery-container">
       <h2>{searchTerm ? `Search Results for: "${searchTerm}"` : 'Image Gallery'}</h2>
       
-      {/* Debug button for testing */}
-      <button 
-        onClick={() => {
-          console.log('Testing Lambda function...');
-          fetchImages();
-        }}
-        style={{
-          marginBottom: '20px',
-          padding: '8px 16px',
-          backgroundColor: '#ff9800',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Test Lambda Function
-      </button>
+      <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
+        <strong>Debug Info:</strong> Found {images.length} images
+      </div>
       
       {images.length === 0 ? (
         <div className="no-images">
@@ -154,23 +93,27 @@ function ImageGallery({ searchTerm = null }) {
         </div>
       ) : (
         <div className="image-grid">
-          {images.map((img) => (
-            <div key={img.imageId || img.id} className="image-card">
+          {images.map((img, index) => (
+            <div key={img.imageId || index} className="image-card">
               <div className="image-container">
                 <img 
                   src={img.url} 
                   alt={img.tags ? img.tags.join(', ') : 'Image'} 
                   className="gallery-image"
                   onError={(e) => {
+                    console.log('Image failed to load:', img.url);
                     e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
+                  }}
+                  onLoad={() => {
+                    console.log('Image loaded successfully:', img.url);
                   }}
                 />
               </div>
               <div className="image-info">
                 {img.tags && img.tags.length > 0 && (
                   <div className="tags">
-                    {img.tags.map((tag, index) => (
-                      <span key={index} className="tag">{tag}</span>
+                    {img.tags.map((tag, tagIndex) => (
+                      <span key={tagIndex} className="tag">{tag}</span>
                     ))}
                   </div>
                 )}
