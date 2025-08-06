@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { signIn, signUp, confirmSignUp } from 'aws-amplify/auth';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 
 const initialState = {
@@ -30,7 +30,7 @@ export default function AuthForm({ onAuthSuccess }) {
   const [validation, setValidation] = useState({});
   const [passwordErrors, setPasswordErrors] = useState([]);
   const [attempts, setAttempts] = useState(0);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;

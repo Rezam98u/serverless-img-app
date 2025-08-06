@@ -41,14 +41,14 @@ const UploadForm = memo(({ onUploadSuccess }) => {
       errors.push('File name too long (max 100 characters)');
     }
     
-    // Check for potentially malicious file names
-    const dangerousPatterns = /[<>:"/\\|?*\x00-\x1f]/;
+    // Check for potentially malicious file names - using safer regex
+    const dangerousPatterns = /[<>:"/\\|?*]/;
     if (dangerousPatterns.test(selectedFile.name)) {
       errors.push('File name contains invalid characters');
     }
     
     return errors;
-  }, []);
+  }, [ALLOWED_TYPES, MAX_FILE_SIZE]);
 
   const handleFileChange = useCallback((e) => {
     const selectedFile = e.target.files[0];
