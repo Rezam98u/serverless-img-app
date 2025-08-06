@@ -35,7 +35,6 @@ A modern, secure image hosting application built with React.js and AWS serverles
 ## 🛠️ Technology Stack
 
 ### Frontend
-- React 18 with Hooks
 - AWS Amplify for AWS integration
 - Modern CSS with responsive design
 - Error Boundaries for graceful error handling
