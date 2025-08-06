@@ -104,9 +104,15 @@ function App() {
       await signOut();
       setUser(null);
       setSearchTerm('');
-      // Clear any cached data
-      if (galleryRef.current && galleryRef.current.fetchAllImages) {
-        galleryRef.current.fetchAllImages();
+      // Clear gallery images if ref is available
+      if (galleryRef.current) {
+        if (galleryRef.current.fetchAllImages) {
+          // Optionally, set gallery to empty state
+          galleryRef.current.fetchAllImages = () => {};
+        }
+        if (galleryRef.current.setAllImages) {
+          galleryRef.current.setAllImages([]);
+        }
       }
     } catch (error) {
       console.error('Sign out error:', error);
