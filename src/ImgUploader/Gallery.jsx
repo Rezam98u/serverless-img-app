@@ -1,283 +1,478 @@
 import React, { useState, useEffect, useCallback, useMemo, memo, forwardRef, useImperativeHandle } from 'react';
-import { get, post } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
+import { post } from 'aws-amplify/api';
 import './Gallery.css';
 
-const ImageCard = memo(({ image, onDelete, isDeleting }) => {
-  const handleImageError = useCallback((e) => {
-    e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
-  }, []);
-
-  const handleDeleteClick = useCallback(() => {
-    onDelete(image.imageId);
-  }, [onDelete, image.imageId]);
-
-  const formatDate = useMemo(() => {
-    return image.uploadDate ? new Date(image.uploadDate).toLocaleDateString() : '';
-  }, [image.uploadDate]);
+// Confirmation Dialog Component
+const ConfirmationDialog = memo(({ isOpen, onConfirm, onCancel, title, message, confirmText = 'Delete', cancelText = 'Cancel' }) => {
+  if (!isOpen) return null;
 
   return (
-    <div className="image-card">
+    <div className="confirmation-overlay">
+      <div className="confirmation-dialog">
+        <h3>{title}</h3>
+        <p>{message}</p>
+        <div className="confirmation-actions">
+          <button onClick={onCancel} className="cancel-btn">
+            {cancelText}
+          </button>
+          <button onClick={onConfirm} className="confirm-btn">
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Lightbox Component
+const Lightbox = memo(({ isOpen, image, onClose, onCopyLink }) => {
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, handleKeyDown]);
+
+  if (!isOpen || !image) return null;
+
+  return (
+    <div className="lightbox-overlay" onClick={onClose}>
+      <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+        <button className="lightbox-close" onClick={onClose}>×</button>
+        <div className="lightbox-image-container">
+          <img 
+            src={image.url} 
+            alt={image.tags ? image.tags.join(', ') : 'Image'} 
+            className="lightbox-image"
+            loading="eager"
+          />
+        </div>
+        <div className="lightbox-info">
+          <div className="lightbox-details">
+            <p><strong>Uploaded:</strong> {new Date(image.uploadDate).toLocaleDateString()}</p>
+            {image.tags && image.tags.length > 0 && (
+              <p><strong>Tags:</strong> {image.tags.join(', ')}</p>
+            )}
+            {image.fileName && (
+              <p><strong>File:</strong> {image.fileName}</p>
+            )}
+            {image.fileSize && (
+              <p><strong>Size:</strong> {(image.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+            )}
+          </div>
+          <div className="lightbox-actions">
+            <button onClick={() => onCopyLink(image.url)} className="lightbox-copy-btn">
+              📋 Copy Link
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Image Card Component
+const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick, onImageError }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleImageError = useCallback((e) => {
+    console.log('Image failed to load:', image.url);
+    setImageError(true);
+    if (onImageError) {
+      onImageError(image.imageId);
+    }
+    e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
+  }, [image.url, image.imageId, onImageError]);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+    setImageError(false);
+  }, []);
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(image.url);
+      // You could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  }, [image.url]);
+
+  const handleDeleteClick = useCallback((e) => {
+    e.stopPropagation();
+    onDelete(image);
+  }, [onDelete, image]);
+
+  return (
+    <div 
+      className={`image-card ${imageError ? 'image-error' : ''}`} 
+      onClick={() => onImageClick(image)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="image-container">
         <img 
           src={image.url} 
           alt={image.tags ? image.tags.join(', ') : 'Image'} 
           className="gallery-image"
           onError={handleImageError}
+          onLoad={handleImageLoad}
           loading="lazy"
         />
-        <button
-          className="delete-button"
-          onClick={handleDeleteClick}
-          disabled={isDeleting}
-          title="Delete image"
-          aria-label="Delete image"
-        >
-          {isDeleting ? 'Deleting...' : '×'}
-        </button>
-      </div>
-      <div className="image-info">
-        <div className="image-id">ID: {image.imageId}</div>
-        {image.tags && image.tags.length > 0 && (
-          <div className="tags">
-            {image.tags.map((tag, index) => (
-              <span key={index} className="tag">{tag}</span>
-            ))}
+        {imageError && (
+          <div className="image-error-overlay">
+            <div className="error-message">
+              <p>⚠️ Image not found</p>
+              <small>File may have been deleted</small>
+            </div>
           </div>
         )}
-        {formatDate && (
-          <div className="upload-date">
-            Uploaded: {formatDate}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
-
-ImageCard.displayName = 'ImageCard';
-
-const ConfirmationDialog = memo(({ isOpen, imageId, onConfirm, onCancel }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="confirmation-overlay">
-      <div className="confirmation-dialog">
-        <h3>Confirm Delete</h3>
-        <p>Are you sure you want to delete this image?</p>
-        <p className="image-id">Image ID: {imageId}</p>
-        <p className="warning">This action cannot be undone.</p>
-        <div className="dialog-buttons">
+        <div className="image-actions">
           <button 
-            onClick={onConfirm}
-            className="confirm-button"
+            onClick={handleCopyLink}
+            className="action-button copy-button"
+            title="Copy link"
           >
-            Yes, Delete
+            📋
           </button>
           <button 
-            onClick={onCancel}
-            className="cancel-button"
+            onClick={handleDeleteClick}
+            className="action-button delete-button"
+            disabled={isDeleting}
+            title="Delete image"
           >
-            Cancel
+            {isDeleting ? '⏳' : '🗑️'}
           </button>
         </div>
       </div>
+      <div className="image-info">
+        <div className="image-tags">
+          {image.tags && image.tags.length > 0 ? (
+            image.tags.slice(0, 3).map((tag, index) => (
+              <span key={index} className="tag">
+                {tag}
+              </span>
+            ))
+          ) : (
+            <span className="no-tags">No tags</span>
+          )}
+          {image.tags && image.tags.length > 3 && (
+            <span className="more-tags">+{image.tags.length - 3}</span>
+          )}
+        </div>
+        <div className="image-date">
+          {new Date(image.uploadDate).toLocaleDateString()}
+        </div>
+        {imageError && (
+          <div className="error-status">
+            <span className="error-badge">⚠️ Broken Link</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 });
 
-ConfirmationDialog.displayName = 'ConfirmationDialog';
-
+// Main Gallery Component
 const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
   const [allImages, setAllImages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [deletingImageId, setDeletingImageId] = useState(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [error, setError] = useState('');
+  const [deletingImages, setDeletingImages] = useState(new Set());
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [imageToDelete, setImageToDelete] = useState(null);
 
-  const fetchAllImages = useCallback(async () => {
+  // Filtered images based on search term
+  const filteredImages = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return allImages;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    return allImages.filter(image => 
+      image.tags && image.tags.some(tag => 
+        tag.toLowerCase().includes(searchLower)
+      )
+    );
+  }, [allImages, searchTerm]);
+
+  // Fetch all images for current user
+  const fetchImages = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setError('');
     
     try {
-      const response = await get({
+      const user = await getCurrentUser();
+      const userId = user.username;
+
+      const response = await post({
         apiName: 'ImageAPI',
         path: '/search-images',
-        options: {}
+        options: {
+          queryParams: { userId }
+        }
       }).response;
 
       const data = await response.body.json();
       
-      let images = [];
-      if (data.body) {
-        try {
-          const parsedBody = JSON.parse(data.body);
-          images = parsedBody.images || [];
-        } catch (parseError) {
-          console.error('Parse error:', parseError);
-          setError('Error parsing response');
-          return;
-        }
+      if (data.images) {
+        // Parse body if it's a string
+        const images = typeof data.images === 'string' 
+          ? JSON.parse(data.images) 
+          : data.images;
+        
+        // Filter out invalid entries and ensure proper structure
+        const validImages = images.filter(img => 
+          img && 
+          img.imageId && 
+          img.imageId !== 'timestamp' && 
+          img.imageId !== 'tags' && 
+          img.imageId !== 'url' && 
+          img.imageId !== 'userId' &&
+          img.url &&
+          img.uploadDate
+        );
+        
+        setAllImages(validImages);
+      } else {
+        setAllImages([]);
       }
-      
-      setAllImages(images);
-      
-    } catch (error) {
-      console.error('Error fetching images:', error);
-      setError('Failed to fetch images. Please try again.');
+    } catch (err) {
+      console.error('Error fetching images:', err);
+      setError('Failed to load images. Please try again.');
+      setAllImages([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Expose fetchAllImages method to parent component
-  useImperativeHandle(ref, () => ({
-    fetchAllImages
-  }), [fetchAllImages]);
-
-  const handleDeleteClick = useCallback((imageId) => {
-    setImageToDelete(imageId);
-    setShowConfirmDialog(true);
-  }, []);
-
-  const confirmDelete = useCallback(async () => {
-    if (!imageToDelete) return;
+  // Delete image
+  const handleDeleteImage = useCallback(async (image) => {
+    setDeletingImages(prev => new Set(prev).add(image.imageId));
     
-    setShowConfirmDialog(false);
-    setDeletingImageId(imageToDelete);
-
     try {
       const user = await getCurrentUser();
       const userId = user.username;
 
-      const deleteRequest = {
+      await post({
         apiName: 'ImageAPI',
         path: '/delete-image',
         options: {
-          body: { imageId: imageToDelete, userId }
+          body: { imageId: image.imageId, userId }
         }
-      };
-      
-      const response = await post(deleteRequest).response;
-      const result = await response.body.json();
+      }).response;
 
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      setAllImages(prevImages => 
-        prevImages.filter(img => img.imageId !== imageToDelete)
-      );
-      
-      alert('Image deleted successfully!');
-
-    } catch (error) {
-      console.error('Error deleting image:', error);
-      alert(`Failed to delete image: ${error.message}`);
+      setAllImages(prev => prev.filter(img => img.imageId !== image.imageId));
+    } catch (err) {
+      console.error('Error deleting image:', err);
+      setError('Failed to delete image. Please try again.');
     } finally {
-      setDeletingImageId(null);
-      setImageToDelete(null);
+      setDeletingImages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(image.imageId);
+        return newSet;
+      });
     }
-  }, [imageToDelete]);
+  }, []);
 
+  // Handle delete click
+  const handleDeleteClick = useCallback((image) => {
+    setImageToDelete(image);
+    setShowConfirmation(true);
+  }, []);
+
+  // Confirm delete
+  const confirmDelete = useCallback(() => {
+    if (imageToDelete) {
+      handleDeleteImage(imageToDelete);
+    }
+    setShowConfirmation(false);
+    setImageToDelete(null);
+  }, [imageToDelete, handleDeleteImage]);
+
+  // Cancel delete
   const cancelDelete = useCallback(() => {
-    setShowConfirmDialog(false);
+    setShowConfirmation(false);
     setImageToDelete(null);
   }, []);
 
-  // Load all images on component mount
-  useEffect(() => {
-    fetchAllImages();
-  }, [fetchAllImages]);
+  // Handle image click
+  const handleImageClick = useCallback((image) => {
+    setSelectedImage(image);
+    setShowLightbox(true);
+  }, []);
 
-  // Filter images based on search term
-  const filteredImages = useMemo(() => {
-    let images = allImages.filter(img => 
-      img.url && 
-      img.url.trim() !== '' && 
-      img.imageId && 
-      img.imageId !== 'timestamp' && 
-      img.imageId !== 'tags' && 
-      img.imageId !== 'url' && 
-      img.imageId !== 'userId'
-    );
+  // Close lightbox
+  const handleCloseLightbox = useCallback(() => {
+    setShowLightbox(false);
+    setSelectedImage(null);
+  }, []);
 
-    // If there's a search term, filter by tag
-    if (searchTerm && searchTerm.trim() !== '') {
-      const searchLower = searchTerm.trim().toLowerCase();
-      images = images.filter(img => 
-        img.tags && 
-        img.tags.some(tag => 
-          tag.toLowerCase().includes(searchLower)
-        )
-      );
+  // Handle image error
+  const handleImageError = useCallback((imageId) => {
+    console.log('Image error for:', imageId);
+    // Could implement automatic cleanup here
+  }, []);
+
+  // Copy link
+  const handleCopyLink = useCallback(async (url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      // Could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  }, []);
+
+  // Cleanup broken images
+  const cleanupBrokenImages = useCallback(async () => {
+    if (!window.confirm('This will remove all broken image entries from your gallery. Continue?')) {
+      return;
     }
 
-    return images;
-  }, [allImages, searchTerm]);
+    setLoading(true);
+    try {
+      const user = await getCurrentUser();
+      const userId = user.username;
 
-  if (loading) {
-    return (
-      <div className="gallery-container">
-        <div className="loading">Loading images...</div>
-      </div>
-    );
-  }
+      const brokenImages = [];
+      for (const image of allImages) {
+        try {
+          const response = await fetch(image.url, { method: 'HEAD' });
+          if (!response.ok) {
+            brokenImages.push(image.imageId);
+          }
+        } catch (error) {
+          brokenImages.push(image.imageId);
+        }
+      }
 
-  if (error) {
-    return (
-      <div className="gallery-container">
-        <div className="error">{error}</div>
-        <button onClick={fetchAllImages} className="retry-button">Retry</button>
-      </div>
-    );
-  }
+      if (brokenImages.length === 0) {
+        alert('No broken images found!');
+        return;
+      }
+
+      for (const imageId of brokenImages) {
+        try {
+          await post({
+            apiName: 'ImageAPI',
+            path: '/delete-image',
+            options: { body: { imageId, userId } }
+          }).response;
+        } catch (error) {
+          console.error('Failed to delete broken image:', imageId, error);
+        }
+      }
+
+      setAllImages(prev => prev.filter(img => !brokenImages.includes(img.imageId)));
+      alert(`Cleaned up ${brokenImages.length} broken images!`);
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+      setError('Error during cleanup. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [allImages]);
+
+  // Expose fetchAllImages to parent
+  useImperativeHandle(ref, () => ({
+    fetchAllImages: fetchImages
+  }), [fetchImages]);
+
+  // Load images on mount
+  useEffect(() => {
+    fetchImages();
+  }, [fetchImages]);
 
   return (
     <div className="gallery-container">
-      <h2>
-        {searchTerm && searchTerm.trim() !== '' 
-          ? `Search Results for: "${searchTerm}"` 
-          : 'Your Image Gallery'
-        }
-      </h2>
-      
-      <div className="gallery-stats">
-        <strong>
-          {searchTerm && searchTerm.trim() !== '' 
-            ? `Found ${filteredImages.length} images with tag "${searchTerm}"`
-            : `Showing ${filteredImages.length} images`
-          }
-        </strong>
-      </div>
-      
-      <ConfirmationDialog
-        isOpen={showConfirmDialog}
-        imageId={imageToDelete}
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-      />
-      
-      {filteredImages.length === 0 ? (
-        <div className="no-images">
-          {searchTerm && searchTerm.trim() !== '' 
-            ? `No images found with tag: "${searchTerm}"` 
-            : 'No images uploaded yet. Upload your first image above!'
-          }
+      <div className="gallery-header">
+        <h3>Your Images</h3>
+        <div className="gallery-stats">
+          <span className="image-count">
+            {searchTerm ? `${filteredImages.length} of ${allImages.length}` : allImages.length} images
+          </span>
+          {!searchTerm && allImages.length > 0 && (
+            <button 
+              onClick={cleanupBrokenImages}
+              className="cleanup-button"
+              disabled={loading}
+            >
+              🧹 Cleanup Broken Images
+            </button>
+          )}
         </div>
-      ) : (
-        <div className="image-grid">
-          {filteredImages.map((image) => (
-            <ImageCard
-              key={image.imageId}
-              image={image}
-              onDelete={handleDeleteClick}
-              isDeleting={deletingImageId === image.imageId}
-            />
-          ))}
+      </div>
+
+      {error && (
+        <div className="error-message">
+          {error}
+          <button onClick={fetchImages} className="retry-button">
+            Retry
+          </button>
         </div>
       )}
+
+      {loading && (
+        <div className="loading-message">
+          Loading images...
+        </div>
+      )}
+
+      {!loading && !error && filteredImages.length === 0 && (
+        <div className="no-images">
+          {searchTerm ? (
+            <p>No images found for "{searchTerm}"</p>
+          ) : (
+            <p>No images uploaded yet. Start by uploading your first image!</p>
+          )}
+        </div>
+      )}
+
+      <div className="image-grid">
+        {filteredImages.map((image) => (
+          <ImageCard
+            key={image.imageId}
+            image={image}
+            onDelete={handleDeleteClick}
+            isDeleting={deletingImages.has(image.imageId)}
+            onImageClick={handleImageClick}
+            onImageError={handleImageError}
+          />
+        ))}
+      </div>
+
+      <ConfirmationDialog
+        isOpen={showConfirmation}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        title="Delete Image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
+
+      <Lightbox
+        isOpen={showLightbox}
+        image={selectedImage}
+        onClose={handleCloseLightbox}
+        onCopyLink={handleCopyLink}
+      />
     </div>
   );
 }));
