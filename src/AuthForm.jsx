@@ -17,7 +17,8 @@ const validatePassword = (password) => {
   if (!/[A-Z]/.test(password)) errors.push('One uppercase letter');
   if (!/[a-z]/.test(password)) errors.push('One lowercase letter');
   if (!/\d/.test(password)) errors.push('One number');
-   return errors;
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push('One special character');
+  return errors;
 };
 
 export default function AuthForm({ onAuthSuccess }) {
