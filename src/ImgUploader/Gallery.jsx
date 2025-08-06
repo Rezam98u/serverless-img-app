@@ -84,9 +84,7 @@ const Lightbox = memo(({ isOpen, image, onClose, onCopyLink }) => {
 
 // Image Card Component
 const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick, onImageError }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   const handleImageError = useCallback((e) => {
     console.log('Image failed to load:', image.url);
@@ -98,7 +96,6 @@ const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick, onImageErro
   }, [image.url, image.imageId, onImageError]);
 
   const handleImageLoad = useCallback(() => {
-    setImageLoaded(true);
     setImageError(false);
   }, []);
 
@@ -120,8 +117,6 @@ const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick, onImageErro
     <div 
       className={`image-card ${imageError ? 'image-error' : ''}`} 
       onClick={() => onImageClick(image)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="image-container">
         <img 
