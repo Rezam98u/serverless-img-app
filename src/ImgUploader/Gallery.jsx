@@ -215,11 +215,16 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
   const fetchImages = useCallback(async () => {
     setLoading(true);
     setError('');
-    
     try {
-      const user = await getCurrentUser();
+      // Defensive: Only proceed if user is authenticated
+      const user = await getCurrentUser().catch(() => null);
+      if (!user) {
+        setLoading(false);
+        setAllImages([]);
+        setError('You must be signed in to view images.');
+        return;
+      }
       const userId = user.username;
-
       const response = await get({
         apiName: 'ImageAPI',
         path: '/search-images',
@@ -227,15 +232,12 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
           queryParams: { userId }
         }
       }).response;
-
       const data = await response.body.json();
-      
       if (data.images) {
         // Parse body if it's a string
         const images = typeof data.images === 'string' 
           ? JSON.parse(data.images) 
           : data.images;
-        
         // Filter out invalid entries and ensure proper structure
         const validImages = images.filter(img => 
           img && 
@@ -247,7 +249,6 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
           img.url &&
           img.uploadDate
         );
-        
         setAllImages(validImages);
       } else {
         setAllImages([]);
