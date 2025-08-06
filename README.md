@@ -2,19 +2,24 @@
 
 A modern, secure, and scalable image hosting application built with React.js and AWS serverless services. Upload, organize, and share your images with powerful tagging and search capabilities.
 
+![React](https://img.shields.io/badge/React-18.0.0-blue.svg)
+![AWS](https://img.shields.io/badge/AWS-Serverless-orange.svg)
+![Amplify](https://img.shields.io/badge/AWS-Amplify-yellow.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+
 ## ✨ Features
 
 ### 🔐 **Authentication & Security**
 - **Secure User Authentication**: AWS Cognito integration with email verification
 - **Password Requirements**: Strong password validation with real-time feedback
-- **Rate Limiting**: Protection against brute force attacks
+- **Rate Limiting**: Protection against brute force attacks (5 attempts max)
 - **User Isolation**: Each user can only access their own images
 - **Input Validation**: Comprehensive client and server-side validation
 
 ### 📤 **Image Upload**
-- **Drag & Drop Support**: Intuitive file upload interface
-- **File Validation**: Type, size, and name validation
-- **Progress Tracking**: Real-time upload progress with status updates
+- **Drag & Drop Support**: Intuitive file upload interface with visual feedback
+- **File Validation**: Type, size, and name validation with detailed error messages
+- **Progress Tracking**: Real-time upload progress with stage indicators
 - **Tag Management**: Add multiple tags with automatic normalization
 - **Large File Support**: Up to 10MB per image
 - **Multiple Formats**: JPG, PNG, GIF, WebP, BMP support
@@ -36,7 +41,7 @@ A modern, secure, and scalable image hosting application built with React.js and
 
 ### 🎨 **Modern UI/UX**
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- **Dark/Light Themes**: Beautiful gradient backgrounds
+- **Beautiful Gradients**: Modern gradient backgrounds and animations
 - **Smooth Animations**: CSS transitions and micro-interactions
 - **Error Boundaries**: Graceful error handling with recovery options
 - **Accessibility**: ARIA labels and keyboard navigation support
@@ -73,39 +78,67 @@ A modern, secure, and scalable image hosting application built with React.js and
 
 ### **1. Clone and Install**
 ```bash
-git clone <repository-url>
-cd serverless-img-app
+git clone https://github.com/yourusername/serverless-image-app.git
+cd serverless-image-app
 npm install
 ```
 
 ### **2. AWS Setup**
-1. **Create S3 Bucket**:
-   ```bash
-   aws s3 mb s3://your-image-bucket-name
-   aws s3api put-bucket-cors --bucket your-image-bucket-name --cors-configuration file://cors.json
-   ```
 
-2. **Create DynamoDB Table**:
-   ```bash
-   aws dynamodb create-table \
-     --table-name ImageMetadata \
-     --attribute-definitions AttributeName=imageId,AttributeType=S \
-     --key-schema AttributeName=imageId,KeyType=HASH \
-     --billing-mode PAY_PER_REQUEST
-   ```
+#### **Create S3 Bucket**
+```bash
+aws s3 mb s3://your-image-bucket-name
+aws s3api put-bucket-cors --bucket your-image-bucket-name --cors-configuration file://cors.json
+```
 
-3. **Set up AWS Cognito**:
-   - Create User Pool with email verification
-   - Create Identity Pool for S3 access
-   - Configure app client
+Create `cors.json`:
+```json
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+      "AllowedOrigins": ["*"],
+      "ExposeHeaders": []
+    }
+  ]
+}
+```
 
-4. **Deploy Lambda Functions**:
-   - `SaveImageMetadata`: Saves image metadata to DynamoDB
-   - `SearchImages`: Retrieves and filters images
-   - `ProcessS3Upload`: Generates pre-signed URLs
-   - `DeleteImage`: Removes images from S3 and DynamoDB
+#### **Create DynamoDB Table**
+```bash
+aws dynamodb create-table \
+  --table-name ImageMetadata \
+  --attribute-definitions AttributeName=imageId,AttributeType=S \
+  --key-schema AttributeName=imageId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+
+#### **Set up AWS Cognito**
+1. **Create User Pool**:
+   - Go to AWS Console → Cognito → User Pools
+   - Create pool with email verification
+   - Note the User Pool ID
+
+2. **Create Identity Pool**:
+   - Go to Federated Identities
+   - Create identity pool linked to your user pool
+   - Note the Identity Pool ID
+
+3. **Configure App Client**:
+   - In your User Pool, create an app client
+   - Note the Client ID
+
+#### **Deploy Lambda Functions**
+Deploy these Lambda functions with appropriate IAM roles:
+
+- **SaveImageMetadata**: Saves image metadata to DynamoDB
+- **SearchImages**: Retrieves and filters images
+- **ProcessS3Upload**: Generates pre-signed URLs
+- **DeleteImage**: Removes images from S3 and DynamoDB
 
 ### **3. Configure Environment**
+
 Create `src/aws-exports.js`:
 ```javascript
 const awsConfig = {
@@ -118,7 +151,8 @@ const awsConfig = {
   API: {
     endpoints: [{
       name: 'ImageAPI',
-      endpoint: 'your-api-gateway-url'
+      endpoint: 'your-api-gateway-url',
+      region: 'your-region'
     }]
   },
   Storage: {
@@ -154,6 +188,15 @@ Ensure Lambda functions have appropriate IAM permissions:
 - **DynamoDB**: `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:DeleteItem`, `dynamodb:Scan`
 - **S3**: `s3:PutObject`, `s3:DeleteObject`, `s3:GetObject`
 - **CloudWatch**: `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents`
+
+### **API Gateway Configuration**
+Your API Gateway should have these endpoints:
+```
+POST /save-metadata → SaveImageMetadata Lambda
+POST /presign-url → ProcessS3Upload Lambda
+GET /search-images → SearchImages Lambda
+POST /delete-image → DeleteImage Lambda
+```
 
 ## 📱 Usage
 
@@ -273,19 +316,43 @@ npm run test:e2e
    - Check user pool settings
    - Ensure email verification is complete
 
+5. **API Gateway 403/404 Errors**:
+   - Check API Gateway resource policy
+   - Verify Cognito Identity Pool permissions
+   - Ensure correct HTTP methods are configured
+
 ### **Debug Mode**
 Enable debug logging:
 ```javascript
 localStorage.setItem('debug', 'true');
 ```
 
+### **AWS CLI Commands**
+```bash
+# Check API Gateway methods
+aws apigateway get-resources --rest-api-id YOUR_API_ID
+
+# Test API endpoint
+curl -X GET "https://YOUR_API_ID.execute-api.YOUR_REGION.amazonaws.com/prod/search-images?userId=test"
+
+# Check Lambda logs
+aws logs describe-log-groups --log-group-name-prefix "/aws/lambda"
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### **Development Guidelines**
+- Follow React best practices
+- Use TypeScript for new features
+- Add tests for new functionality
+- Update documentation as needed
+- Follow the existing code style
 
 ## 📄 License
 
@@ -298,6 +365,28 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - AWS Lambda for serverless computing
 - The open-source community for inspiration and tools
 
+## 📞 Support
+
+If you encounter any issues or have questions:
+
+1. **Check the troubleshooting section** above
+2. **Search existing issues** in the GitHub repository
+3. **Create a new issue** with detailed information
+4. **Contact the maintainers** for urgent issues
+
+## 🔄 Changelog
+
+### **v1.0.0** (Current)
+- Initial release
+- Complete image upload and management system
+- User authentication with AWS Cognito
+- Responsive design and modern UI
+- Comprehensive error handling
+
 ---
 
 **Built with ❤️ using React.js and AWS Serverless**
+
+[![GitHub stars](https://img.shields.io/github/stars/yourusername/serverless-image-app.svg?style=social&label=Star)](https://github.com/yourusername/serverless-image-app)
+[![GitHub forks](https://img.shields.io/github/forks/yourusername/serverless-image-app.svg?style=social&label=Fork)](https://github.com/yourusername/serverless-image-app)
+[![GitHub issues](https://img.shields.io/github/issues/yourusername/serverless-image-app.svg)](https://github.com/yourusername/serverless-image-app/issues)
