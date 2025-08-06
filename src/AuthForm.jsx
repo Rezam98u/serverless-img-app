@@ -9,7 +9,7 @@ const initialState = {
   confirmPassword: '',
 };
 
-export default function AuthForm() {
+export default function AuthForm({ onAuthSuccess }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,8 @@ export default function AuthForm() {
         setError('Sign up successful! Please sign in.');
       } else {
         await signIn({ username: form.email, password: form.password });
-        navigate('/');
+        if (onAuthSuccess) onAuthSuccess();
+        // navigate('/'); // Navigation is now handled by App.js
       }
     } catch (err) {
       setError(err.message || 'An error occurred');

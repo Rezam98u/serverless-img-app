@@ -16,19 +16,22 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const galleryRef = useRef();
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const u = await getCurrentUser();
-        setUser(u);
-      } catch {
-        setUser(null);
-      } finally {
-        setCheckingAuth(false);
-      }
+  // Function to check authentication and set user
+  const checkAuth = useCallback(async () => {
+    setCheckingAuth(true);
+    try {
+      const u = await getCurrentUser();
+      setUser(u);
+    } catch {
+      setUser(null);
+    } finally {
+      setCheckingAuth(false);
     }
-    checkAuth();
   }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const handleSearch = useCallback((term) => {
     setSearchTerm(term);
@@ -46,7 +49,7 @@ function App() {
   };
 
   if (checkingAuth) return null;
-  if (!user) return <AuthForm />;
+  if (!user) return <AuthForm onAuthSuccess={checkAuth} />;
 
   return (
     <div className="App">
