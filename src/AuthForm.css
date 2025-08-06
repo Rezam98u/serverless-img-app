@@ -1,0 +1,218 @@
+/* AuthForm Premium Redesign */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(120deg, #e0e7ef 0%, #f5f7fa 100%);
+  animation: fadeInBg 0.7s;
+}
+
+@keyframes fadeInBg {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.auth-form {
+  background: #fff;
+  padding: 2.7rem 2.2rem 2.2rem 2.2rem;
+  border-radius: 22px;
+  box-shadow: 0 8px 32px rgba(60, 60, 120, 0.13), 0 1.5px 0 #1976d2 inset;
+  width: 100%;
+  max-width: 410px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  animation: fadeInForm 0.7s;
+  position: relative;
+}
+
+@keyframes fadeInForm {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.auth-form .brand {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.7rem;
+}
+
+.auth-form .brand-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1976d2 60%, #2196f3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #fff;
+  margin-bottom: 0.3rem;
+  box-shadow: 0 2px 8px #1976d222;
+}
+
+.auth-form .brand-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1976d2;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.1rem;
+}
+
+.auth-form h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: #222;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.form-group label {
+  font-size: 1.05rem;
+  color: #222;
+  font-weight: 500;
+  margin-bottom: 2px;
+  margin-left: 2px;
+}
+
+.form-group input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.05rem 1.1rem;
+  border: 1.7px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1.08rem;
+  background: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px rgba(60,60,120,0.03);
+}
+
+.form-group input:focus {
+  border-color: #1976d2;
+  outline: none;
+  box-shadow: 0 0 0 2px #1976d233;
+  background: #f0f7ff;
+}
+
+.form-group input.invalid {
+  border-color: #f44336;
+  background: #fff6f6;
+  box-shadow: 0 0 0 2px #f4433622;
+}
+
+.validation-msg {
+  color: #d32f2f;
+  font-size: 1.01rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.1rem;
+  padding-left: 2px;
+  letter-spacing: 0.1px;
+}
+
+.error-msg {
+  color: #fff;
+  background: #f44336;
+  border-radius: 8px;
+  padding: 0.95rem 1.1rem;
+  font-size: 1.09rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px #f4433622;
+  letter-spacing: 0.1px;
+}
+
+.auth-btn {
+  background: linear-gradient(90deg, #1976d2 60%, #2196f3 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 1.13rem 0;
+  font-size: 1.18rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.13s;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+  letter-spacing: 0.2px;
+}
+
+.auth-btn:disabled {
+  background: #b0bec5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.auth-btn:hover:not(:disabled), .auth-btn:focus:not(:disabled) {
+  background: linear-gradient(90deg, #1565c0 60%, #1976d2 100%);
+  box-shadow: 0 4px 16px #1976d222;
+  transform: translateY(-2px) scale(1.02);
+  outline: none;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 1.2rem 0 0.5rem 0;
+}
+
+.switch-mode {
+  text-align: center;
+  font-size: 1.07rem;
+  color: #666;
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #1976d2;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 1.07rem;
+  padding: 0.13rem 0.25rem;
+  margin-left: 0.2rem;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.link-btn:hover, .link-btn:focus {
+  color: #1565c0;
+  background: #e3f2fd;
+  outline: none;
+}
+
+@media (max-width: 600px) {
+  .auth-form {
+    padding: 1.3rem 0.5rem 1.1rem 0.5rem;
+    max-width: 99vw;
+    border-radius: 14px;
+  }
+  .auth-form h2 {
+    font-size: 1.3rem;
+  }
+  .auth-btn {
+    font-size: 1.01rem;
+    padding: 0.9rem 0;
+  }
+  .auth-form .brand-logo {
+    width: 38px;
+    height: 38px;
+    font-size: 1.3rem;
+  }
+}
