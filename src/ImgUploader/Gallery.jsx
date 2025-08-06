@@ -81,8 +81,6 @@ const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick }) => {
 ImageCard.displayName = 'ImageCard';
 
 const Lightbox = memo(({ isOpen, image, onClose }) => {
-  if (!isOpen || !image) return null;
-
   const handleBackdropClick = useCallback((e) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -91,17 +89,19 @@ const Lightbox = memo(({ isOpen, image, onClose }) => {
 
   const handleCopyLink = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(image.url);
+      await navigator.clipboard.writeText(image?.url || '');
       alert('Image link copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy link:', err);
       alert('Failed to copy link');
     }
-  }, [image.url]);
+  }, [image?.url]);
 
   const formatDate = useMemo(() => {
-    return image.uploadDate ? new Date(image.uploadDate).toLocaleDateString() : '';
-  }, [image.uploadDate]);
+    return image?.uploadDate ? new Date(image.uploadDate).toLocaleDateString() : '';
+  }, [image?.uploadDate]);
+
+  if (!isOpen || !image) return null;
 
   return (
     <div className="lightbox-overlay" onClick={handleBackdropClick}>
