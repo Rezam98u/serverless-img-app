@@ -1,14 +1,31 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useEffect } from 'react';
 import './SearchBar.css';
 
 const SearchBar = memo(({ onSearch }) => {
   const [inputValue, setInputValue] = useState('');
+  const [debouncedValue, setDebouncedValue] = useState('');
+
+  // Debounce the search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(inputValue);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  // Trigger search when debounced value changes
+  useEffect(() => {
+    if (onSearch) {
+      onSearch(debouncedValue);
+    }
+  }, [debouncedValue, onSearch]);
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
-    const searchTerm = inputValue.trim();
+    // Immediate search on form submit
     if (onSearch) {
-      onSearch(searchTerm);
+      onSearch(inputValue.trim());
     }
   }, [onSearch, inputValue]);
 
@@ -65,6 +82,9 @@ const SearchBar = memo(({ onSearch }) => {
       {inputValue && (
         <div className="current-search">
           <span>Filtering by: <strong>"{inputValue}"</strong></span>
+          {inputValue !== debouncedValue && (
+            <span className="searching-indicator"> (searching...)</span>
+          )}
         </div>
       )}
     </div>

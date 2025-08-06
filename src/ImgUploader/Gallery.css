@@ -101,6 +101,63 @@
   transform: scale(1.05);
 }
 
+/* Image Actions */
+.image-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.2s ease;
+}
+
+.image-card:hover .image-actions {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.action-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.copy-button {
+  background-color: rgba(25, 118, 210, 0.9);
+  color: white;
+}
+
+.copy-button:hover {
+  background-color: rgba(25, 118, 210, 1);
+  transform: scale(1.1);
+}
+
+.delete-button {
+  background-color: rgba(244, 67, 54, 0.9);
+  color: white;
+  font-weight: bold;
+}
+
+.delete-button:hover {
+  background-color: rgba(244, 67, 54, 1);
+  transform: scale(1.1);
+}
+
+.delete-button:disabled {
+  background-color: rgba(158, 158, 158, 0.7);
+  cursor: not-allowed;
+  transform: scale(1);
+}
+
 /* Delete button styles */
 .delete-button {
   position: absolute;
@@ -259,6 +316,118 @@
   background-color: #555;
 }
 
+/* Lightbox Styles */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lightbox-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  position: relative;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: bold;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.lightbox-close:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.lightbox-image-container {
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.lightbox-info {
+  padding: 20px;
+  background: #f8f9fa;
+}
+
+.lightbox-actions {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.lightbox-copy-btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lightbox-copy-btn:hover {
+  background: #1565c0;
+}
+
+.lightbox-details {
+  font-size: 14px;
+  color: #333;
+}
+
+.lightbox-details p {
+  margin: 8px 0;
+}
+
+/* Searching Indicator */
+.searching-indicator {
+  color: #666;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Mobile Responsive for Lightbox */
 @media (max-width: 768px) {
   .image-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -282,5 +451,31 @@
   
   .dialog-buttons {
     flex-direction: column;
+  }
+
+  .lightbox-content {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .lightbox-image-container {
+    max-height: 60vh;
+  }
+  
+  .lightbox-info {
+    padding: 15px;
+  }
+  
+  .lightbox-close {
+    top: 10px;
+    right: 10px;
+    width: 35px;
+    height: 35px;
+    font-size: 20px;
+  }
+  
+  .image-actions {
+    opacity: 1;
+    transform: scale(1);
   }
 }

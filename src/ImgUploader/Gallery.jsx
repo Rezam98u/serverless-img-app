@@ -3,21 +3,34 @@ import { get, post } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import './Gallery.css';
 
-const ImageCard = memo(({ image, onDelete, isDeleting }) => {
+const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick }) => {
   const handleImageError = useCallback((e) => {
     e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
   }, []);
 
-  const handleDeleteClick = useCallback(() => {
+  const handleDeleteClick = useCallback((e) => {
+    e.stopPropagation();
     onDelete(image.imageId);
   }, [onDelete, image.imageId]);
+
+  const handleCopyLink = useCallback(async (e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(image.url);
+      // You could add a toast notification here
+      alert('Image link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      alert('Failed to copy link');
+    }
+  }, [image.url]);
 
   const formatDate = useMemo(() => {
     return image.uploadDate ? new Date(image.uploadDate).toLocaleDateString() : '';
   }, [image.uploadDate]);
 
   return (
-    <div className="image-card">
+    <div className="image-card" onClick={() => onImageClick(image)}>
       <div className="image-container">
         <img 
           src={image.url} 
@@ -26,15 +39,25 @@ const ImageCard = memo(({ image, onDelete, isDeleting }) => {
           onError={handleImageError}
           loading="lazy"
         />
-        <button
-          className="delete-button"
-          onClick={handleDeleteClick}
-          disabled={isDeleting}
-          title="Delete image"
-          aria-label="Delete image"
-        >
-          {isDeleting ? 'Deleting...' : '×'}
-        </button>
+        <div className="image-actions">
+          <button
+            className="action-button copy-button"
+            onClick={handleCopyLink}
+            title="Copy image link"
+            aria-label="Copy image link"
+          >
+            📋
+          </button>
+          <button
+            className="delete-button"
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
+            title="Delete image"
+            aria-label="Delete image"
+          >
+            {isDeleting ? 'Deleting...' : '×'}
+          </button>
+        </div>
       </div>
       <div className="image-info">
         <div className="image-id">ID: {image.imageId}</div>
@@ -56,6 +79,63 @@ const ImageCard = memo(({ image, onDelete, isDeleting }) => {
 });
 
 ImageCard.displayName = 'ImageCard';
+
+const Lightbox = memo(({ isOpen, image, onClose }) => {
+  if (!isOpen || !image) return null;
+
+  const handleBackdropClick = useCallback((e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  }, [onClose]);
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(image.url);
+      alert('Image link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      alert('Failed to copy link');
+    }
+  }, [image.url]);
+
+  const formatDate = useMemo(() => {
+    return image.uploadDate ? new Date(image.uploadDate).toLocaleDateString() : '';
+  }, [image.uploadDate]);
+
+  return (
+    <div className="lightbox-overlay" onClick={handleBackdropClick}>
+      <div className="lightbox-content">
+        <button className="lightbox-close" onClick={onClose}>×</button>
+        <div className="lightbox-image-container">
+          <img 
+            src={image.url} 
+            alt={image.tags ? image.tags.join(', ') : 'Image'} 
+            className="lightbox-image"
+          />
+        </div>
+        <div className="lightbox-info">
+          <div className="lightbox-actions">
+            <button onClick={handleCopyLink} className="lightbox-copy-btn">
+              📋 Copy Link
+            </button>
+          </div>
+          <div className="lightbox-details">
+            <p><strong>ID:</strong> {image.imageId}</p>
+            {image.tags && image.tags.length > 0 && (
+              <p><strong>Tags:</strong> {image.tags.join(', ')}</p>
+            )}
+            {formatDate && (
+              <p><strong>Uploaded:</strong> {formatDate}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+Lightbox.displayName = 'Lightbox';
 
 const ConfirmationDialog = memo(({ isOpen, imageId, onConfirm, onCancel }) => {
   if (!isOpen) return null;
@@ -95,6 +175,8 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
   const [deletingImageId, setDeletingImageId] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [imageToDelete, setImageToDelete] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const fetchAllImages = useCallback(async () => {
     setLoading(true);
@@ -145,6 +227,16 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
   const handleDeleteClick = useCallback((imageId) => {
     setImageToDelete(imageId);
     setShowConfirmDialog(true);
+  }, []);
+
+  const handleImageClick = useCallback((image) => {
+    setLightboxImage(image);
+    setShowLightbox(true);
+  }, []);
+
+  const handleCloseLightbox = useCallback(() => {
+    setShowLightbox(false);
+    setLightboxImage(null);
   }, []);
 
   const confirmDelete = useCallback(async () => {
@@ -264,6 +356,12 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />
+
+      <Lightbox
+        isOpen={showLightbox}
+        image={lightboxImage}
+        onClose={handleCloseLightbox}
+      />
       
       {filteredImages.length === 0 ? (
         <div className="no-images">
@@ -280,6 +378,7 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
               image={image}
               onDelete={handleDeleteClick}
               isDeleting={deletingImageId === image.imageId}
+              onImageClick={handleImageClick}
             />
           ))}
         </div>

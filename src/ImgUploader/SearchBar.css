@@ -89,6 +89,12 @@
   text-align: center;
 }
 
+.searching-indicator {
+  color: #666;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
   .search-container {
     padding: 15px;

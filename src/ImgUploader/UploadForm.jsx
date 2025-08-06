@@ -41,6 +41,15 @@ const UploadForm = memo(({ onUploadSuccess }) => {
     }
   }, []);
 
+  // Normalize tags: lowercase, trim, remove duplicates
+  const normalizeTags = useCallback((tagString) => {
+    return tagString
+      .split(',')
+      .map(tag => tag.trim().toLowerCase())
+      .filter(tag => tag.length > 0)
+      .filter((tag, index, arr) => arr.indexOf(tag) === index); // Remove duplicates
+  }, []);
+
   const handleUpload = useCallback(async () => {
     if (!file) {
       setMessage('Please select an image');
@@ -76,9 +85,9 @@ const UploadForm = memo(({ onUploadSuccess }) => {
         throw new Error('Failed to upload to S3');
       }
 
-      // Step 3: Save metadata
+      // Step 3: Save metadata with normalized tags
       const imageUrl = uploadUrl.split('?')[0];
-      const tagsArray = tags.split(',').map(t => t.trim()).filter(t => t);
+      const normalizedTags = normalizeTags(tags);
       
       await post({
         apiName: 'ImageAPI',
@@ -86,7 +95,7 @@ const UploadForm = memo(({ onUploadSuccess }) => {
         options: {
           body: { 
             imageUrl, 
-            tags: tagsArray, 
+            tags: normalizedTags, 
             userId, 
             timestamp: new Date().toISOString() 
           }
@@ -106,7 +115,7 @@ const UploadForm = memo(({ onUploadSuccess }) => {
     } finally {
       setLoading(false);
     }
-  }, [file, tags, resetForm, onUploadSuccess]);
+  }, [file, tags, resetForm, onUploadSuccess, normalizeTags]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !loading && file) {
@@ -146,6 +155,9 @@ const UploadForm = memo(({ onUploadSuccess }) => {
           onKeyPress={handleKeyPress}
           aria-label="Enter image tags"
         />
+        <small style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
+          Tags will be automatically converted to lowercase for better search
+        </small>
       </div>
       
       <button 
