@@ -101,10 +101,16 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
     setError(null);
     
     try {
+      // Get current user ID
+      const user = await getCurrentUser();
+      const userId = user.username;
+
       const response = await get({
         apiName: 'ImageAPI',
         path: '/search-images',
-        options: {}
+        options: {
+          queryStringParameters: { userId }
+        }
       }).response;
 
       const data = await response.body.json();
