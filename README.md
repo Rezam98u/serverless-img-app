@@ -75,4 +75,4 @@ A modern, secure image hosting application built with React.js and AWS serverles
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/serverless-image-hosting.git
+   git clone https://github.com/Rezam98u/serverless-img-app.git
