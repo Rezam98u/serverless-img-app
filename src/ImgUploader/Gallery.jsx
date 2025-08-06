@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, memo, forwardRef, useImperativeHandle } from 'react';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { post } from 'aws-amplify/api';
+import { get, post } from 'aws-amplify/api';
 import './Gallery.css';
 
 // Confirmation Dialog Component
@@ -220,7 +220,7 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
       const user = await getCurrentUser();
       const userId = user.username;
 
-      const response = await post({
+      const response = await get({
         apiName: 'ImageAPI',
         path: '/search-images',
         options: {
