@@ -17,6 +17,31 @@
   background-color: #f0f0f0;
   border-radius: 4px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.cleanup-button {
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.cleanup-button:hover:not(:disabled) {
+  background: #f57c00;
+}
+
+.cleanup-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 .loading {
@@ -478,4 +503,47 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* Broken Image Styles */
+.image-error {
+  opacity: 0.7;
+}
+
+.image-error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+}
+
+.error-message p {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.error-message small {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.error-status {
+  margin-top: 8px;
+}
+
+.error-badge {
+  background: #f44336;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
 }

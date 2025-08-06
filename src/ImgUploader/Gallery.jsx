@@ -3,9 +3,22 @@ import { get, post } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import './Gallery.css';
 
-const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick }) => {
+const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick, onImageError }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   const handleImageError = useCallback((e) => {
+    console.log('Image failed to load:', image.url);
+    setImageError(true);
+    if (onImageError) {
+      onImageError(image.imageId);
+    }
     e.target.src = 'https://via.placeholder.com/200x200?text=Image+Not+Found';
+  }, [image.url, image.imageId, onImageError]);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+    setImageError(false);
   }, []);
 
   const handleDeleteClick = useCallback((e) => {
@@ -17,7 +30,6 @@ const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick }) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(image.url);
-      // You could add a toast notification here
       alert('Image link copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy link:', err);
@@ -30,15 +42,24 @@ const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick }) => {
   }, [image.uploadDate]);
 
   return (
-    <div className="image-card" onClick={() => onImageClick(image)}>
+    <div className={`image-card ${imageError ? 'image-error' : ''}`} onClick={() => onImageClick(image)}>
       <div className="image-container">
         <img 
           src={image.url} 
           alt={image.tags ? image.tags.join(', ') : 'Image'} 
           className="gallery-image"
           onError={handleImageError}
+          onLoad={handleImageLoad}
           loading="lazy"
         />
+        {imageError && (
+          <div className="image-error-overlay">
+            <div className="error-message">
+              <p>⚠️ Image not found</p>
+              <small>File may have been deleted</small>
+            </div>
+          </div>
+        )}
         <div className="image-actions">
           <button
             className="action-button copy-button"
@@ -71,6 +92,11 @@ const ImageCard = memo(({ image, onDelete, isDeleting, onImageClick }) => {
         {formatDate && (
           <div className="upload-date">
             Uploaded: {formatDate}
+          </div>
+        )}
+        {imageError && (
+          <div className="error-status">
+            <span className="error-badge">⚠️ Broken Link</span>
           </div>
         )}
       </div>
@@ -112,6 +138,9 @@ const Lightbox = memo(({ isOpen, image, onClose }) => {
             src={image.url} 
             alt={image.tags ? image.tags.join(', ') : 'Image'} 
             className="lightbox-image"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+            }}
           />
         </div>
         <div className="lightbox-info">
@@ -239,6 +268,71 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
     setLightboxImage(null);
   }, []);
 
+  const handleImageError = useCallback((imageId) => {
+    console.log('Image error detected for:', imageId);
+    // You could optionally remove broken images from the list
+    // setAllImages(prev => prev.filter(img => img.imageId !== imageId));
+  }, []);
+
+  const cleanupBrokenImages = useCallback(async () => {
+    if (!window.confirm('This will remove all broken image entries from your gallery. Continue?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = await getCurrentUser();
+      const userId = user.username;
+
+      // Get all images and check which ones are broken
+      const brokenImages = [];
+      
+      for (const image of allImages) {
+        try {
+          const response = await fetch(image.url, { method: 'HEAD' });
+          if (!response.ok) {
+            brokenImages.push(image.imageId);
+          }
+        } catch (error) {
+          brokenImages.push(image.imageId);
+        }
+      }
+
+      if (brokenImages.length === 0) {
+        alert('No broken images found!');
+        return;
+      }
+
+      // Delete broken images from database
+      for (const imageId of brokenImages) {
+        try {
+          const deleteRequest = {
+            apiName: 'ImageAPI',
+            path: '/delete-image',
+            options: {
+              body: { imageId, userId }
+            }
+          };
+          
+          await post(deleteRequest).response;
+        } catch (error) {
+          console.error('Failed to delete broken image:', imageId, error);
+        }
+      }
+
+      // Remove broken images from local state
+      setAllImages(prev => prev.filter(img => !brokenImages.includes(img.imageId)));
+      
+      alert(`Cleaned up ${brokenImages.length} broken images!`);
+      
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+      alert('Error during cleanup. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [allImages]);
+
   const confirmDelete = useCallback(async () => {
     if (!imageToDelete) return;
     
@@ -348,6 +442,15 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
             : `Showing ${filteredImages.length} images`
           }
         </strong>
+        {!searchTerm && allImages.length > 0 && (
+          <button 
+            onClick={cleanupBrokenImages}
+            className="cleanup-button"
+            disabled={loading}
+          >
+            🧹 Cleanup Broken Images
+          </button>
+        )}
       </div>
       
       <ConfirmationDialog
@@ -379,6 +482,7 @@ const ImageGallery = memo(forwardRef(({ searchTerm = '' }, ref) => {
               onDelete={handleDeleteClick}
               isDeleting={deletingImageId === image.imageId}
               onImageClick={handleImageClick}
+              onImageError={handleImageError}
             />
           ))}
         </div>
