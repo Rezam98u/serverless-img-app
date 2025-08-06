@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { signIn, signUp } from 'aws-amplify/auth';
-import { useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 
 const initialState = {
@@ -15,7 +14,6 @@ export default function AuthForm({ onAuthSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [validation, setValidation] = useState({});
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,8 +44,7 @@ export default function AuthForm({ onAuthSuccess }) {
       } else {
         await signIn({ username: form.email, password: form.password });
         if (onAuthSuccess) onAuthSuccess();
-        // navigate('/'); // Navigation is now handled by App.js
-      }
+              }
     } catch (err) {
       setError(err.message || 'An error occurred');
     } finally {
